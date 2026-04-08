@@ -416,3 +416,30 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+
+# Bragi project-specific ignores
+
+# Generated logs
+**/Logs/
+logs/
+*.log.json
+
+# Test outputs and temporary validation artifacts
+TestOutputs/
+test-output/
+artifacts/test-output/
+artifacts/manual-validation/
+
+# Local machine configuration overrides
+config.local.json
+config.*.local.json
+appsettings.Local.json
+appsettings.*.Local.json
+
+# Local package and release artifacts
+artifacts/release/
+artifacts/publish/
+SHA256SUMS.txt
+
+# Optional docs screenshot output folder
+docs/screenshots/
