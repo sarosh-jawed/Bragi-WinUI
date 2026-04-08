@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "Bragi.App.WinUI (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "Bragi.App.WinUI (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}
