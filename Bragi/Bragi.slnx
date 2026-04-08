@@ -10,13 +10,9 @@
   <Project Path="Bragi.Application/Bragi.Application.csproj">
     <Platform Solution="*|x64" Project="x64" />
   </Project>
-  <Project Path="Bragi.Domain/Bragi.Domain.csproj">
-    <Platform Solution="Release|x64" Project="x64" />
-  </Project>
+  <Project Path="Bragi.Domain/Bragi.Domain.csproj" />
   <Project Path="Bragi.Infrastructure/Bragi.Infrastructure.csproj">
     <Platform Solution="*|x64" Project="x64" />
   </Project>
-  <Project Path="Bragi.Tests/Bragi.Tests.csproj">
-    <Platform Solution="Release|x64" Project="x64" />
-  </Project>
+  <Project Path="Bragi.Tests/Bragi.Tests.csproj" />
 </Solution>
