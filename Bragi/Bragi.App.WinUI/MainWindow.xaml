@@ -1,19 +1,55 @@
-<?xml version="1.0" encoding="utf-8"?>
 <Window
     x:Class="Bragi.App.WinUI.MainWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:local="using:Bragi.App.WinUI"
-    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    mc:Ignorable="d"
-    Title="Bragi.App.WinUI">
+    x:DefaultBindMode="OneTime">
 
-    <Window.SystemBackdrop>
-        <MicaBackdrop />
-    </Window.SystemBackdrop>
+  <Grid
+        Padding="24"
+        Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 
-    <Grid>
+    <Border
+            MaxWidth="860"
+            Padding="28"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center"
+            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+            BorderThickness="1"
+            CornerRadius="12">
 
-    </Grid>
+      <StackPanel Spacing="16">
+        <TextBlock
+                    Text="{x:Bind ViewModel.AppTitle}"
+                    FontSize="28"
+                    FontWeight="SemiBold" />
+
+        <TextBlock
+                    Text="{x:Bind ViewModel.StatusMessage}"
+                    TextWrapping="WrapWholeWords" />
+
+        <StackPanel Spacing="8">
+          <TextBlock
+                        Text="Configuration sources"
+                        FontSize="18"
+                        FontWeight="SemiBold" />
+
+          <TextBlock
+                        Text="{x:Bind ViewModel.ConfigSummary}"
+                        TextWrapping="WrapWholeWords" />
+        </StackPanel>
+
+        <StackPanel Spacing="8">
+          <TextBlock
+                        Text="Resolved startup paths"
+                        FontSize="18"
+                        FontWeight="SemiBold" />
+
+          <TextBlock
+                        Text="{x:Bind ViewModel.PathSummary}"
+                        TextWrapping="WrapWholeWords" />
+        </StackPanel>
+      </StackPanel>
+    </Border>
+  </Grid>
 </Window>

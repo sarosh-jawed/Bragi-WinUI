@@ -1,50 +1,170 @@
-﻿using System;
-using System.Collections.Generic;
+using System;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
+using Bragi.App.WinUI.Startup;
+using Bragi.App.WinUI.ViewModels;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Controls.Primitives;
-using Microsoft.UI.Xaml.Data;
-using Microsoft.UI.Xaml.Input;
-using Microsoft.UI.Xaml.Media;
-using Microsoft.UI.Xaml.Navigation;
-using Microsoft.UI.Xaml.Shapes;
-using Windows.ApplicationModel;
-using Windows.ApplicationModel.Activation;
-using Windows.Foundation;
-using Windows.Foundation.Collections;
+using Serilog;
+using Serilog.Events;
 
-// To learn more about WinUI, the WinUI project structure,
-// and more about our project templates, see: http://aka.ms/winui-project-info.
+namespace Bragi.App.WinUI;
 
-namespace Bragi.App.WinUI
+public partial class App : Application
 {
-    /// <summary>
-    /// Provides application-specific behavior to supplement the default Application class.
-    /// </summary>
-    public partial class App : Application
+    private Window? _mainWindow;
+    private readonly ILogger<App> _logger;
+
+    public static IHost AppHost { get; } = CreateHostBuilder().Build();
+
+    public App()
     {
-        private Window? _window;
+        InitializeComponent();
 
-        /// <summary>
-        /// Initializes the singleton application object.  This is the first line of authored code
-        /// executed, and as such is the logical equivalent of main() or WinMain().
-        /// </summary>
-        public App()
-        {
-            InitializeComponent();
-        }
+        UnhandledException += OnUnhandledException;
 
-        /// <summary>
-        /// Invoked when the application is launched.
-        /// </summary>
-        /// <param name="args">Details about the launch request and process.</param>
-        protected override void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
+        _logger = AppHost.Services.GetRequiredService<ILogger<App>>();
+        _logger.LogInformation("Bragi application object created.");
+    }
+
+    protected override async void OnLaunched(LaunchActivatedEventArgs args)
+    {
+        base.OnLaunched(args);
+
+        try
         {
-            _window = new MainWindow();
-            _window.Activate();
+            await AppHost.StartAsync();
+
+            var configuration = AppHost.Services.GetRequiredService<IConfiguration>();
+            ValidateStartupConfiguration(configuration);
+
+            _logger.LogInformation("Startup configuration loaded and validated successfully.");
+
+            _mainWindow = AppHost.Services.GetRequiredService<MainWindow>();
+            _mainWindow.Closed += OnMainWindowClosed;
+            _mainWindow.Activate();
+
+            _logger.LogInformation("Main window activated.");
         }
+        catch (Exception ex)
+        {
+            _logger.LogCritical(ex, "Application launch failed.");
+            throw;
+        }
+    }
+
+    private static IHostBuilder CreateHostBuilder()
+    {
+        var packagedConfigPath = GetPackagedConfigPath();
+        var localConfigPath = GetLocalConfigPath();
+
+        return Host.CreateDefaultBuilder()
+            .UseContentRoot(AppContext.BaseDirectory)
+            .ConfigureAppConfiguration((context, config) =>
+            {
+                config.AddJsonFile(packagedConfigPath, optional: false, reloadOnChange: false);
+                config.AddJsonFile(localConfigPath, optional: true, reloadOnChange: false);
+            })
+            .UseSerilog((context, services, loggerConfiguration) =>
+            {
+                var logsRoot = ExpandSpecialPathTokens(
+                    context.Configuration["Bragi:Paths:LogsRoot"] ?? "%LOCALAPPDATA%\\Bragi\\Logs");
+
+                Directory.CreateDirectory(logsRoot);
+
+                loggerConfiguration
+                    .MinimumLevel.Information()
+                    .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
+                    .Enrich.FromLogContext()
+                    .WriteTo.File(
+                        path: Path.Combine(logsRoot, "bragi-.log"),
+                        rollingInterval: RollingInterval.Day,
+                        retainedFileCountLimit: 14,
+                        shared: true);
+            })
+            .ConfigureServices((context, services) =>
+            {
+                var logsRoot = ExpandSpecialPathTokens(
+                    context.Configuration["Bragi:Paths:LogsRoot"] ?? "%LOCALAPPDATA%\\Bragi\\Logs");
+
+                var outputRoot = ExpandSpecialPathTokens(
+                    context.Configuration["Bragi:Paths:OutputRoot"] ?? "%LOCALAPPDATA%\\Bragi\\Output");
+
+                services.AddSingleton(new BragiStartupContext(
+                    packagedConfigPath,
+                    localConfigPath,
+                    logsRoot,
+                    outputRoot));
+
+                services.AddSingleton<MainWindowViewModel>();
+                services.AddSingleton<MainWindow>();
+            });
+    }
+
+    private static void ValidateStartupConfiguration(IConfiguration configuration)
+    {
+        var requiredKeys = new[]
+        {
+            "Bragi:AppName",
+            "Bragi:Paths:LogsRoot",
+            "Bragi:Paths:OutputRoot"
+        };
+
+        var missingKeys = requiredKeys
+            .Where(key => string.IsNullOrWhiteSpace(configuration[key]))
+            .ToArray();
+
+        if (missingKeys.Length > 0)
+        {
+            throw new InvalidOperationException(
+                $"Startup configuration is missing required keys: {string.Join(", ", missingKeys)}");
+        }
+    }
+
+    private static string GetPackagedConfigPath()
+    {
+        return Path.Combine(AppContext.BaseDirectory, "config.json");
+    }
+
+    private static string GetLocalConfigPath()
+    {
+        return Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "Bragi",
+            "config.local.json");
+    }
+
+    private static string ExpandSpecialPathTokens(string path)
+    {
+        var localAppDataPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+        var userProfilePath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        var documentsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+
+        return path
+            .Replace("%LOCALAPPDATA%", localAppDataPath, StringComparison.OrdinalIgnoreCase)
+            .Replace("%USERPROFILE%", userProfilePath, StringComparison.OrdinalIgnoreCase)
+            .Replace("%DOCUMENTS%", documentsPath, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private async void OnMainWindowClosed(object sender, WindowEventArgs args)
+    {
+        _logger.LogInformation("Main window closed. Stopping host.");
+
+        try
+        {
+            await AppHost.StopAsync(TimeSpan.FromSeconds(2));
+        }
+        finally
+        {
+            AppHost.Dispose();
+        }
+    }
+
+    private void OnUnhandledException(object sender, Microsoft.UI.Xaml.UnhandledExceptionEventArgs e)
+    {
+        _logger.LogCritical(e.Exception, "Unhandled exception occurred.");
     }
 }
