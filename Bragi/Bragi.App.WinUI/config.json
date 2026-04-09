@@ -1,0 +1,9 @@
+{
+  "Bragi": {
+    "AppName": "Bragi",
+    "Paths": {
+      "LogsRoot": "%LOCALAPPDATA%\\Bragi\\Logs",
+      "OutputRoot": "%LOCALAPPDATA%\\Bragi\\Output"
+    }
+  }
+}
