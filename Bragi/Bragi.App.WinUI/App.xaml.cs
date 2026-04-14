@@ -16,6 +16,8 @@ using Bragi.Infrastructure.Extraction;
 using Bragi.Infrastructure.Ingestion;
 using Bragi.Infrastructure.Categorization;
 using Bragi.Infrastructure.Export;
+using Bragi.Application.Workflow;
+using Bragi.Infrastructure.Workflow;
 
 namespace Bragi.App.WinUI;
 
@@ -113,6 +115,9 @@ public partial class App : Microsoft.UI.Xaml.Application
                 services.AddSingleton<TextBodyBuilder>();
                 services.AddSingleton<RunSummaryBuilder>();
                 services.AddSingleton<ITextExportService, TextExportService>();
+
+                services.AddSingleton<WizardSessionStore>();
+                services.AddSingleton<IWorkflowOrchestrator, WorkflowOrchestrator>();
 
                 services.AddSingleton(sp =>
                 {
