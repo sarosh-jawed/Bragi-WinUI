@@ -1,0 +1,21 @@
+<Page
+    x:Class="Bragi.App.WinUI.Pages.ReviewSubjectsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+  <Grid Padding="24">
+    <Border
+            Padding="20"
+            CornerRadius="12"
+            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+            BorderThickness="1"
+            Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}">
+      <StackPanel Spacing="10">
+        <TextBlock Text="Review Subjects" Style="{StaticResource TitleMediumTextBlockStyle}" />
+        <TextBlock
+                    Text="This page will host extraction review content. The shell already knows this is a distinct linear step and keeps it locked until input is loaded."
+                    TextWrapping="WrapWholeWords" />
+      </StackPanel>
+    </Border>
+  </Grid>
+</Page>

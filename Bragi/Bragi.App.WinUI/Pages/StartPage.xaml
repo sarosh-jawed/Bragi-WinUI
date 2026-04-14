@@ -1,0 +1,39 @@
+<Page
+    x:Class="Bragi.App.WinUI.Pages.StartPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+  <ScrollViewer>
+    <StackPanel Padding="24" Spacing="16">
+      <Border
+                Padding="20"
+                CornerRadius="12"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="1"
+                Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}">
+        <StackPanel Spacing="10">
+          <TextBlock Text="Welcome to Bragi" Style="{StaticResource TitleMediumTextBlockStyle}" />
+          <TextBlock
+                        Text="This shell establishes the professional Bragi workflow foundation. Use the stepper on the left and the footer actions below to move through the run in a guided, linear way."
+                        TextWrapping="WrapWholeWords" />
+        </StackPanel>
+      </Border>
+
+      <Border
+                Padding="20"
+                CornerRadius="12"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="1"
+                Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}">
+        <StackPanel Spacing="8">
+          <TextBlock Text="Workflow steps" Style="{StaticResource TitleSmallTextBlockStyle}" />
+          <TextBlock Text="1. Start" />
+          <TextBlock Text="2. Load Input" />
+          <TextBlock Text="3. Review Subjects" />
+          <TextBlock Text="4. Preview Results" />
+          <TextBlock Text="5. Export &amp; Finish" />
+        </StackPanel>
+      </Border>
+    </StackPanel>
+  </ScrollViewer>
+</Page>
