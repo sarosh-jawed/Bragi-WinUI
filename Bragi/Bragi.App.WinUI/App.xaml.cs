@@ -118,6 +118,7 @@ public partial class App : Microsoft.UI.Xaml.Application
 
                 services.AddSingleton<WizardSessionStore>();
                 services.AddSingleton<IWorkflowOrchestrator, WorkflowOrchestrator>();
+                services.AddSingleton<IStepNavigationService, StepNavigationService>();
 
                 services.AddSingleton(sp =>
                 {

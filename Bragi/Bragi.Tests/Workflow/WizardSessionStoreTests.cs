@@ -9,6 +9,19 @@ namespace Bragi.Tests.Workflow;
 public sealed class WizardSessionStoreTests
 {
     [Fact]
+    public void InitialState_LocksLaterSteps_AndKeepsStartLinear()
+    {
+        var store = new WizardSessionStore();
+
+        Assert.Equal(0, store.State.CurrentStepIndex);
+        Assert.False(store.State.IsStepLocked(0));
+        Assert.False(store.State.IsStepLocked(1));
+        Assert.True(store.State.IsStepLocked(2));
+        Assert.True(store.State.IsStepLocked(3));
+        Assert.True(store.State.IsStepLocked(4));
+    }
+
+    [Fact]
     public void StateSurvivesNavigation_AndPreviewExportClear_WhenInputChanges()
     {
         var store = new WizardSessionStore();
@@ -21,9 +34,9 @@ public sealed class WizardSessionStoreTests
         store.MarkExtractionReviewComplete();
         store.SetCategorizationResult(categorizationResult);
         store.SetRunSummary(runSummary, ["C:\\Output\\ArtSubjects.txt", "C:\\Output\\RunSummary.txt"]);
-        store.SetCurrentStep(3);
+        store.SetCurrentStep(4);
 
-        Assert.Equal(3, store.State.CurrentStepIndex);
+        Assert.Equal(4, store.State.CurrentStepIndex);
         Assert.NotNull(store.ExtractedSubjects);
         Assert.NotNull(store.LastCategorizationResult);
         Assert.NotNull(store.LastRunSummary);
@@ -38,13 +51,15 @@ public sealed class WizardSessionStoreTests
         Assert.Null(store.LastRunSummary);
         Assert.Empty(store.GeneratedFiles);
 
-        Assert.True(store.State.IsInputLoaded);
+        Assert.Equal(1, store.State.CurrentStepIndex);
+        Assert.False(store.State.IsInputLoaded);
         Assert.False(store.State.IsExtractionReviewComplete);
         Assert.False(store.State.HasPreview);
         Assert.False(store.State.IsExportComplete);
-        Assert.Equal(0, store.State.CurrentStepIndex);
+        Assert.False(store.State.IsStepLocked(1));
         Assert.True(store.State.IsStepLocked(2));
         Assert.True(store.State.IsStepLocked(3));
+        Assert.True(store.State.IsStepLocked(4));
     }
 
     [Fact]
@@ -56,12 +71,12 @@ public sealed class WizardSessionStoreTests
         store.MarkExtractionReviewComplete();
         store.SetCategorizationResult(CreateCategorizationResult());
 
-        store.SetCurrentStep(1);
+        store.SetCurrentStep(2);
         Assert.NotNull(store.ExtractedSubjects);
         Assert.NotNull(store.LastCategorizationResult);
         Assert.True(store.State.HasPreview);
 
-        store.SetCurrentStep(2);
+        store.SetCurrentStep(3);
         Assert.NotNull(store.ExtractedSubjects);
         Assert.NotNull(store.LastCategorizationResult);
         Assert.True(store.State.HasPreview);

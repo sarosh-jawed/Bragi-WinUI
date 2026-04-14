@@ -8,17 +8,27 @@ namespace Bragi.Application.Workflow;
 
 public sealed class WizardSessionStore
 {
-    private const int DefaultStepCount = 4;
+    private const int DefaultStepCount = 5;
 
     private readonly object _syncLock = new();
     private CancellationTokenSource? _currentCancellationTokenSource;
 
     public WizardSessionStore()
     {
-        State = WizardState.CreateInitial(DefaultStepCount);
+        State = BuildState(
+            currentStepIndex: 0,
+            isInputLoaded: false,
+            isExtractionReviewComplete: false,
+            hasPreview: false,
+            isExportComplete: false,
+            isBusy: false,
+            totalStepCount: DefaultStepCount);
+
         GeneratedFiles = Array.Empty<string>();
         InputKind = InputFileKind.Unknown;
     }
+
+    public event EventHandler? SessionChanged;
 
     public WizardState State { get; private set; }
 
@@ -65,8 +75,18 @@ public sealed class WizardSessionStore
             LastCategorizationResult = null;
             LastRunSummary = null;
             GeneratedFiles = Array.Empty<string>();
-            State = WizardState.CreateInitial(totalStepCount);
+
+            State = BuildState(
+                currentStepIndex: 0,
+                isInputLoaded: false,
+                isExtractionReviewComplete: false,
+                hasPreview: false,
+                isExportComplete: false,
+                isBusy: false,
+                totalStepCount: totalStepCount);
         }
+
+        RaiseSessionChanged();
     }
 
     public void SetCurrentStep(int stepIndex)
@@ -85,6 +105,8 @@ public sealed class WizardSessionStore
                 CurrentStepIndex = stepIndex
             };
         }
+
+        RaiseSessionChanged();
     }
 
     public void SetSelectedInputFile(string selectedInputFile, InputFileKind inputKind)
@@ -109,14 +131,16 @@ public sealed class WizardSessionStore
             GeneratedFiles = Array.Empty<string>();
 
             State = BuildState(
-                currentStepIndex: 0,
-                isInputLoaded: true,
+                currentStepIndex: 1,
+                isInputLoaded: false,
                 isExtractionReviewComplete: false,
                 hasPreview: false,
                 isExportComplete: false,
                 isBusy: State.IsBusy,
                 totalStepCount: State.TotalStepCount);
         }
+
+        RaiseSessionChanged();
     }
 
     public void SetSelectedOutputFolder(string selectedOutputFolder)
@@ -131,6 +155,8 @@ public sealed class WizardSessionStore
             SelectedOutputFolder = selectedOutputFolder.Trim();
             ClearExportInternal();
         }
+
+        RaiseSessionChanged();
     }
 
     public void SetExtractionResult(ExtractionResult extractionResult)
@@ -147,7 +173,7 @@ public sealed class WizardSessionStore
             GeneratedFiles = Array.Empty<string>();
 
             State = BuildState(
-                currentStepIndex: Math.Max(State.CurrentStepIndex, 1),
+                currentStepIndex: Math.Max(State.CurrentStepIndex, 2),
                 isInputLoaded: true,
                 isExtractionReviewComplete: false,
                 hasPreview: false,
@@ -155,6 +181,8 @@ public sealed class WizardSessionStore
                 isBusy: State.IsBusy,
                 totalStepCount: State.TotalStepCount);
         }
+
+        RaiseSessionChanged();
     }
 
     public void MarkExtractionReviewComplete()
@@ -167,7 +195,7 @@ public sealed class WizardSessionStore
             }
 
             State = BuildState(
-                currentStepIndex: Math.Max(State.CurrentStepIndex, 1),
+                currentStepIndex: Math.Max(State.CurrentStepIndex, 2),
                 isInputLoaded: true,
                 isExtractionReviewComplete: true,
                 hasPreview: State.HasPreview,
@@ -175,6 +203,8 @@ public sealed class WizardSessionStore
                 isBusy: State.IsBusy,
                 totalStepCount: State.TotalStepCount);
         }
+
+        RaiseSessionChanged();
     }
 
     public void SetCategorizationResult(CategorizationResult categorizationResult)
@@ -193,7 +223,7 @@ public sealed class WizardSessionStore
             GeneratedFiles = Array.Empty<string>();
 
             State = BuildState(
-                currentStepIndex: Math.Max(State.CurrentStepIndex, 2),
+                currentStepIndex: Math.Max(State.CurrentStepIndex, 3),
                 isInputLoaded: true,
                 isExtractionReviewComplete: true,
                 hasPreview: true,
@@ -201,6 +231,8 @@ public sealed class WizardSessionStore
                 isBusy: State.IsBusy,
                 totalStepCount: State.TotalStepCount);
         }
+
+        RaiseSessionChanged();
     }
 
     public void SetRunSummary(RunSummary runSummary, IReadOnlyList<string> generatedFiles)
@@ -222,7 +254,7 @@ public sealed class WizardSessionStore
                 .ToArray();
 
             State = BuildState(
-                currentStepIndex: Math.Max(State.CurrentStepIndex, 3),
+                currentStepIndex: Math.Max(State.CurrentStepIndex, 4),
                 isInputLoaded: true,
                 isExtractionReviewComplete: true,
                 hasPreview: true,
@@ -230,6 +262,8 @@ public sealed class WizardSessionStore
                 isBusy: State.IsBusy,
                 totalStepCount: State.TotalStepCount);
         }
+
+        RaiseSessionChanged();
     }
 
     public void ClearPreviewAndExport()
@@ -241,14 +275,16 @@ public sealed class WizardSessionStore
             GeneratedFiles = Array.Empty<string>();
 
             State = BuildState(
-                currentStepIndex: State.CurrentStepIndex,
-                isInputLoaded: ExtractedSubjects is not null || !string.IsNullOrWhiteSpace(SelectedInputFile),
-                isExtractionReviewComplete: ExtractedSubjects is not null && State.IsExtractionReviewComplete,
+                currentStepIndex: Math.Min(State.CurrentStepIndex, 2),
+                isInputLoaded: ExtractedSubjects is not null,
+                isExtractionReviewComplete: false,
                 hasPreview: false,
                 isExportComplete: false,
                 isBusy: State.IsBusy,
                 totalStepCount: State.TotalStepCount);
         }
+
+        RaiseSessionChanged();
     }
 
     public void ClearExport()
@@ -257,6 +293,8 @@ public sealed class WizardSessionStore
         {
             ClearExportInternal();
         }
+
+        RaiseSessionChanged();
     }
 
     public void BeginBusyOperation(CancellationTokenSource cancellationTokenSource)
@@ -277,6 +315,8 @@ public sealed class WizardSessionStore
                 IsBusy = true
             };
         }
+
+        RaiseSessionChanged();
     }
 
     public void CancelBusyOperation()
@@ -285,6 +325,8 @@ public sealed class WizardSessionStore
         {
             _currentCancellationTokenSource?.Cancel();
         }
+
+        RaiseSessionChanged();
     }
 
     public void CompleteBusyOperation()
@@ -298,6 +340,8 @@ public sealed class WizardSessionStore
                 IsBusy = false
             };
         }
+
+        RaiseSessionChanged();
     }
 
     private void ClearExportInternal()
@@ -306,10 +350,10 @@ public sealed class WizardSessionStore
         GeneratedFiles = Array.Empty<string>();
 
         State = BuildState(
-            currentStepIndex: State.CurrentStepIndex,
-            isInputLoaded: State.IsInputLoaded,
+            currentStepIndex: Math.Min(State.CurrentStepIndex, 3),
+            isInputLoaded: ExtractedSubjects is not null,
             isExtractionReviewComplete: State.IsExtractionReviewComplete,
-            hasPreview: State.HasPreview,
+            hasPreview: LastCategorizationResult is not null,
             isExportComplete: false,
             isBusy: State.IsBusy,
             totalStepCount: State.TotalStepCount);
@@ -341,20 +385,17 @@ public sealed class WizardSessionStore
 
         if (!isInputLoaded)
         {
-            lockedStepIndices.AddRange(Enumerable.Range(1, Math.Max(0, totalStepCount - 1)));
+            lockedStepIndices.AddRange(new[] { 2, 3, 4 }.Where(stepIndex => stepIndex < totalStepCount));
         }
         else if (!isExtractionReviewComplete)
         {
-            if (totalStepCount > 2)
-            {
-                lockedStepIndices.AddRange(Enumerable.Range(2, totalStepCount - 2));
-            }
+            lockedStepIndices.AddRange(new[] { 3, 4 }.Where(stepIndex => stepIndex < totalStepCount));
         }
         else if (!hasPreview)
         {
-            if (totalStepCount > 3)
+            if (4 < totalStepCount)
             {
-                lockedStepIndices.AddRange(Enumerable.Range(3, totalStepCount - 3));
+                lockedStepIndices.Add(4);
             }
         }
 
@@ -384,5 +425,10 @@ public sealed class WizardSessionStore
         {
             throw new ArgumentOutOfRangeException(nameof(stepIndex), "Step index is outside the valid range.");
         }
+    }
+
+    private void RaiseSessionChanged()
+    {
+        SessionChanged?.Invoke(this, EventArgs.Empty);
     }
 }
