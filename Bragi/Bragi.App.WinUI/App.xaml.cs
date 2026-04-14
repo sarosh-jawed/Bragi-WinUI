@@ -12,6 +12,8 @@ using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml;
 using Serilog;
 using Serilog.Events;
+using Bragi.Infrastructure.Extraction;
+using Bragi.Infrastructure.Ingestion;
 
 namespace Bragi.App.WinUI;
 
@@ -97,6 +99,9 @@ public partial class App : Microsoft.UI.Xaml.Application
                 services.AddSingleton<IConfigProvider, ConfigProvider>();
 
                 services.AddSingleton(sp => sp.GetRequiredService<IConfigProvider>().GetRequiredConfig());
+
+                services.AddSingleton<IInputIngestService, InputIngestService>();
+                services.AddSingleton<ISubjectExtractionService, SubjectExtractionService>();
 
                 services.AddSingleton(sp =>
                 {
