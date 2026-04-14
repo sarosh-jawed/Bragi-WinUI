@@ -1,8 +1,10 @@
 using System;
 using System.IO;
-using System.Linq;
 using Bragi.App.WinUI.Startup;
 using Bragi.App.WinUI.ViewModels;
+using Bragi.Application.Configuration;
+using Bragi.Application.Contracts;
+using Bragi.Infrastructure.Configuration;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -38,10 +40,12 @@ public partial class App : Microsoft.UI.Xaml.Application
         {
             await AppHost.StartAsync();
 
-            var configuration = AppHost.Services.GetRequiredService<IConfiguration>();
-            ValidateStartupConfiguration(configuration);
+            var configProvider = AppHost.Services.GetRequiredService<IConfigProvider>();
+            var config = await configProvider.LoadAsync();
 
-            _logger.LogInformation("Startup configuration loaded and validated successfully.");
+            _logger.LogInformation(
+                "Startup configuration loaded and validated successfully. Category rules loaded: {CategoryRuleCount}.",
+                config.CategoryRules.Count);
 
             _mainWindow = AppHost.Services.GetRequiredService<MainWindow>();
             _mainWindow.Closed += OnMainWindowClosed;
@@ -70,8 +74,8 @@ public partial class App : Microsoft.UI.Xaml.Application
             })
             .UseSerilog((context, services, loggerConfiguration) =>
             {
-                var logsRoot = ExpandSpecialPathTokens(
-                    context.Configuration["Bragi:Paths:LogsRoot"] ?? "%LOCALAPPDATA%\\Bragi\\Logs");
+                var pathTokenResolver = new PathTokenResolver();
+                var logsRoot = pathTokenResolver.Resolve("%LOCALAPPDATA%\\Bragi\\Logs");
 
                 Directory.CreateDirectory(logsRoot);
 
@@ -87,41 +91,29 @@ public partial class App : Microsoft.UI.Xaml.Application
             })
             .ConfigureServices((context, services) =>
             {
-                var logsRoot = ExpandSpecialPathTokens(
-                    context.Configuration["Bragi:Paths:LogsRoot"] ?? "%LOCALAPPDATA%\\Bragi\\Logs");
+                services.AddSingleton<PathTokenResolver>();
+                services.AddSingleton<BragiConfigLoader>();
+                services.AddSingleton<BragiConfigValidator>();
+                services.AddSingleton<IConfigProvider, ConfigProvider>();
 
-                var outputRoot = ExpandSpecialPathTokens(
-                    context.Configuration["Bragi:Paths:OutputRoot"] ?? "%LOCALAPPDATA%\\Bragi\\Output");
+                services.AddSingleton(sp => sp.GetRequiredService<IConfigProvider>().GetRequiredConfig());
 
-                services.AddSingleton(new BragiStartupContext(
-                    packagedConfigPath,
-                    localConfigPath,
-                    logsRoot,
-                    outputRoot));
+                services.AddSingleton(sp =>
+                {
+                    var pathTokenResolver = sp.GetRequiredService<PathTokenResolver>();
+                    var config = sp.GetRequiredService<BragiConfig>();
+                    var logsRoot = pathTokenResolver.Resolve("%LOCALAPPDATA%\\Bragi\\Logs");
+
+                    return new BragiStartupContext(
+                        packagedConfigPath,
+                        localConfigPath,
+                        logsRoot,
+                        config.Output.RootPath);
+                });
 
                 services.AddSingleton<MainWindowViewModel>();
                 services.AddSingleton<MainWindow>();
             });
-    }
-
-    private static void ValidateStartupConfiguration(IConfiguration configuration)
-    {
-        var requiredKeys = new[]
-        {
-            "Bragi:AppName",
-            "Bragi:Paths:LogsRoot",
-            "Bragi:Paths:OutputRoot"
-        };
-
-        var missingKeys = requiredKeys
-            .Where(key => string.IsNullOrWhiteSpace(configuration[key]))
-            .ToArray();
-
-        if (missingKeys.Length > 0)
-        {
-            throw new InvalidOperationException(
-                $"Startup configuration is missing required keys: {string.Join(", ", missingKeys)}");
-        }
     }
 
     private static string GetPackagedConfigPath()
@@ -135,18 +127,6 @@ public partial class App : Microsoft.UI.Xaml.Application
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "Bragi",
             "config.local.json");
-    }
-
-    private static string ExpandSpecialPathTokens(string path)
-    {
-        var localAppDataPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-        var userProfilePath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-        var documentsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-
-        return path
-            .Replace("%LOCALAPPDATA%", localAppDataPath, StringComparison.OrdinalIgnoreCase)
-            .Replace("%USERPROFILE%", userProfilePath, StringComparison.OrdinalIgnoreCase)
-            .Replace("%DOCUMENTS%", documentsPath, StringComparison.OrdinalIgnoreCase);
     }
 
     private async void OnMainWindowClosed(object sender, WindowEventArgs args)

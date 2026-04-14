@@ -1,9 +1,103 @@
 {
   "Bragi": {
-    "AppName": "Bragi",
-    "Paths": {
-      "LogsRoot": "%LOCALAPPDATA%\\Bragi\\Logs",
-      "OutputRoot": "%LOCALAPPDATA%\\Bragi\\Output"
+    "CsvColumns": {
+      "SubjectColumnName": "instance.subjects",
+      "TitleColumnName": "instance.title",
+      "RecordIdColumnName": "instance.id",
+      "SubjectColumnContainsJsonArray": true
+    },
+    "InputOptions": {
+      "PlainTextExtensions": [ ".txt" ],
+      "CsvExtensions": [ ".csv" ],
+      "DetectInputFileKindFromExtension": true,
+      "TreatUnknownExtensionAsPlainText": false,
+      "CaptureCsvSourceTitle": true,
+      "CaptureCsvSourceRecordId": true
+    },
+    "CategoryRules": [
+      {
+        "Key": "art",
+        "DisplayName": "Art",
+        "OutputFileName": "ArtSubjects.txt",
+        "IncludeKeywords": [ "art", "painting", "sculpture" ],
+        "ExcludeKeywords": [],
+        "RequireAnyKeywords": [],
+        "DisableForFiction": false,
+        "DisableForJuvenile": false,
+        "IncludeMatchMode": "Contains",
+        "ExcludeMatchMode": "Contains",
+        "RequireAnyMatchMode": "Contains",
+        "SortOrder": 10,
+        "Enabled": true
+      },
+      {
+        "Key": "biology",
+        "DisplayName": "Biology",
+        "OutputFileName": "BiologySubjects.txt",
+        "IncludeKeywords": [ "biology", "botany", "zoology" ],
+        "ExcludeKeywords": [],
+        "RequireAnyKeywords": [],
+        "DisableForFiction": false,
+        "DisableForJuvenile": false,
+        "IncludeMatchMode": "Contains",
+        "ExcludeMatchMode": "Contains",
+        "RequireAnyMatchMode": "Contains",
+        "SortOrder": 20,
+        "Enabled": true
+      },
+      {
+        "Key": "business",
+        "DisplayName": "Business",
+        "OutputFileName": "BusinessSubjects.txt",
+        "IncludeKeywords": [ "business", "management", "marketing" ],
+        "ExcludeKeywords": [],
+        "RequireAnyKeywords": [],
+        "DisableForFiction": false,
+        "DisableForJuvenile": false,
+        "IncludeMatchMode": "Contains",
+        "ExcludeMatchMode": "Contains",
+        "RequireAnyMatchMode": "Contains",
+        "SortOrder": 30,
+        "Enabled": true
+      },
+      {
+        "Key": "chemistry",
+        "DisplayName": "Chemistry",
+        "OutputFileName": "ChemistrySubjects.txt",
+        "IncludeKeywords": [ "chemistry", "biochemistry", "organic chemistry" ],
+        "ExcludeKeywords": [],
+        "RequireAnyKeywords": [],
+        "DisableForFiction": false,
+        "DisableForJuvenile": false,
+        "IncludeMatchMode": "Contains",
+        "ExcludeMatchMode": "Contains",
+        "RequireAnyMatchMode": "Contains",
+        "SortOrder": 40,
+        "Enabled": true
+      }
+    ],
+    "Output": {
+      "RootPath": "%LOCALAPPDATA%\\Bragi\\Output",
+      "UncategorizedFileName": "NotCategorizedSubjects.txt",
+      "RunSummaryFileName": "RunSummary.txt",
+      "CreateMonthlySubfolder": true,
+      "MonthlySubfolderFormat": "yyyy-MM"
+    },
+    "TextTemplate": {
+      "CategoryLineTemplate": "{{OriginalSubject}}",
+      "UncategorizedLineTemplate": "{{OriginalSubject}}",
+      "RunSummaryHeaderTemplate": "Bragi Run Summary",
+      "RunSummaryCategoryLineTemplate": "{{CategoryKey}}: {{Count}}",
+      "RunSummaryDetailLineTemplate": "{{Label}}: {{Value}}"
+    },
+    "BehaviorOptions": {
+      "AllowMultiMatch": true,
+      "SortOutputs": true,
+      "DeduplicateOutputs": true,
+      "IgnoreBlankSubjects": true,
+      "CaseInsensitiveMatching": true,
+      "NormalizeWhitespace": true,
+      "TrimSubjects": true
     }
   }
 }
