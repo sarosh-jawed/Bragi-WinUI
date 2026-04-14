@@ -13,7 +13,7 @@ using Serilog.Events;
 
 namespace Bragi.App.WinUI;
 
-public partial class App : Application
+public partial class App : Microsoft.UI.Xaml.Application
 {
     private Window? _mainWindow;
     private readonly ILogger<App> _logger;
