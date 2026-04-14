@@ -15,6 +15,7 @@ using Serilog.Events;
 using Bragi.Infrastructure.Extraction;
 using Bragi.Infrastructure.Ingestion;
 using Bragi.Infrastructure.Categorization;
+using Bragi.Infrastructure.Export;
 
 namespace Bragi.App.WinUI;
 
@@ -108,6 +109,10 @@ public partial class App : Microsoft.UI.Xaml.Application
                 services.AddSingleton<KeywordMatcher>();
                 services.AddSingleton<ExclusionMatcher>();
                 services.AddSingleton<ICategorizationService, CategorizationService>();
+
+                services.AddSingleton<TextBodyBuilder>();
+                services.AddSingleton<RunSummaryBuilder>();
+                services.AddSingleton<ITextExportService, TextExportService>();
 
                 services.AddSingleton(sp =>
                 {
