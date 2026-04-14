@@ -1,24 +1,24 @@
 using System;
 using Bragi.App.WinUI.Startup;
-using Microsoft.Extensions.Configuration;
+using Bragi.Application.Configuration;
 
 namespace Bragi.App.WinUI.ViewModels;
 
 public sealed class MainWindowViewModel
 {
     public MainWindowViewModel(
-        IConfiguration configuration,
+        BragiConfig config,
         BragiStartupContext startupContext)
     {
-        var appName = configuration["Bragi:AppName"] ?? "Bragi";
-
-        WindowTitle = appName;
-        AppTitle = $"{appName} startup foundation";
-        StatusMessage = "Bragi launched through dependency injection. Configuration loading and startup logging are active.";
+        WindowTitle = "Bragi";
+        AppTitle = "Bragi startup foundation";
+        StatusMessage =
+            $"Bragi launched through dependency injection. Configuration loading, validation, and startup logging are active. Loaded {config.CategoryRules.Count} category rules.";
 
         ConfigSummary =
             $"Packaged config: {startupContext.PackagedConfigPath}{Environment.NewLine}" +
-            $"Local override: {startupContext.LocalConfigPath}";
+            $"Local override: {startupContext.LocalConfigPath}{Environment.NewLine}" +
+            $"Category rules loaded: {config.CategoryRules.Count}";
 
         PathSummary =
             $"Logs root: {startupContext.LogsRoot}{Environment.NewLine}" +
