@@ -1,5 +1,4 @@
 using System;
-using System.Threading.Tasks;
 using Bragi.App.WinUI.ViewModels;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -46,6 +45,11 @@ public sealed partial class LoadInputPage : Page
 
     private async void ReloadButton_OnClick(object sender, RoutedEventArgs e)
     {
+        if (string.IsNullOrWhiteSpace(ViewModel.SelectedInputFilePath))
+        {
+            return;
+        }
+
         await ViewModel.LoadInputAsync(ViewModel.SelectedInputFilePath);
     }
 }

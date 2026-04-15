@@ -191,7 +191,6 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(CanMoveNext));
         OnPropertyChanged(nameof(CanMovePrevious));
         OnPropertyChanged(nameof(CanCancelBusyOperation));
-        OnPropertyChanged(nameof(IsStepEnabled));
     }
 
     private int? FindNextUnlockedStepIndex(int currentStepIndex)

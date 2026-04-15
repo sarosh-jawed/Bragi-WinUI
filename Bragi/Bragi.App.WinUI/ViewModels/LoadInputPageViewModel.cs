@@ -40,8 +40,18 @@ public sealed class LoadInputPageViewModel : ObservableObject
     public string SelectedInputFilePath
     {
         get => _selectedInputFilePath;
-        private set => SetProperty(ref _selectedInputFilePath, value);
+        private set
+        {
+            if (SetProperty(ref _selectedInputFilePath, value))
+            {
+                OnPropertyChanged(nameof(InputFilePath));
+                OnPropertyChanged(nameof(FileNameDisplay));
+                OnPropertyChanged(nameof(CanReloadExtraction));
+            }
+        }
     }
+
+    public string InputFilePath => SelectedInputFilePath;
 
     public string DetectedInputKind
     {
@@ -64,7 +74,13 @@ public sealed class LoadInputPageViewModel : ObservableObject
     public int ExtractedSubjectCount
     {
         get => _extractedSubjectCount;
-        private set => SetProperty(ref _extractedSubjectCount, value);
+        private set
+        {
+            if (SetProperty(ref _extractedSubjectCount, value))
+            {
+                OnPropertyChanged(nameof(HasExtraction));
+            }
+        }
     }
 
     public int BlankOrIgnoredCount
@@ -88,10 +104,19 @@ public sealed class LoadInputPageViewModel : ObservableObject
     public bool IsBusy
     {
         get => _isBusy;
-        private set => SetProperty(ref _isBusy, value);
+        private set
+        {
+            if (SetProperty(ref _isBusy, value))
+            {
+                OnPropertyChanged(nameof(CanReloadExtraction));
+            }
+        }
     }
 
     public bool HasExtraction => ExtractedSubjectCount > 0 || TotalRecordsRead > 0;
+
+    public bool CanReloadExtraction =>
+        !IsBusy && !string.IsNullOrWhiteSpace(SelectedInputFilePath);
 
     public string FileNameDisplay =>
         string.IsNullOrWhiteSpace(SelectedInputFilePath)
@@ -135,15 +160,19 @@ public sealed class LoadInputPageViewModel : ObservableObject
             IsBusy = _wizardSessionStore.State.IsBusy;
             OnPropertyChanged(nameof(HasExtraction));
             OnPropertyChanged(nameof(FileNameDisplay));
+            OnPropertyChanged(nameof(InputFilePath));
+            OnPropertyChanged(nameof(CanReloadExtraction));
         }
     }
 
     public void RefreshFromSession()
     {
         SelectedInputFilePath = _wizardSessionStore.SelectedInputFile ?? string.Empty;
-        DetectedInputKind = _wizardSessionStore.InputKind == Domain.Enums.InputFileKind.Unknown
-            ? "Not loaded"
-            : _wizardSessionStore.InputKind.ToString();
+
+        DetectedInputKind =
+            _wizardSessionStore.InputKind == Domain.Enums.InputFileKind.Unknown
+                ? "Not loaded"
+                : _wizardSessionStore.InputKind.ToString();
 
         var extractionResult = _wizardSessionStore.ExtractedSubjects;
 
@@ -156,6 +185,8 @@ public sealed class LoadInputPageViewModel : ObservableObject
 
         OnPropertyChanged(nameof(HasExtraction));
         OnPropertyChanged(nameof(FileNameDisplay));
+        OnPropertyChanged(nameof(InputFilePath));
+        OnPropertyChanged(nameof(CanReloadExtraction));
     }
 
     private void OnSessionChanged(object? sender, EventArgs e)

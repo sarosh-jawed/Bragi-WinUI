@@ -1,95 +1,128 @@
 <Page
     x:Class="Bragi.App.WinUI.Pages.LoadInputPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    RequestedTheme="Light"
+    Background="Transparent"
+    mc:Ignorable="d">
 
   <ScrollViewer>
     <StackPanel Padding="24" Spacing="16">
+
       <Border
-                Padding="20"
-                CornerRadius="12"
-                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                Background="{StaticResource InfoBannerBackgroundBrush}"
+                BorderBrush="{StaticResource InfoBannerBorderBrush}"
                 BorderThickness="1"
-                Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}">
-        <StackPanel Spacing="12">
-          <TextBlock Text="Choose input file" Style="{StaticResource TitleMediumTextBlockStyle}" />
+                CornerRadius="8"
+                Padding="12"
+                Margin="0,0,0,16">
 
-          <TextBox
-                        IsReadOnly="True"
-                        Text="{x:Bind ViewModel.SelectedInputFilePath, Mode=OneWay}"
-                        PlaceholderText="Choose a .txt or .csv file" />
-
-          <StackPanel Orientation="Horizontal" Spacing="10">
-            <Button Content="Choose File" Click="ChooseFileButton_OnClick" />
-            <Button Content="Reload Extraction" Click="ReloadButton_OnClick" />
+        <StackPanel Orientation="Horizontal" Spacing="10">
+          <FontIcon
+                        Glyph="&#xE946;"
+                        Foreground="{StaticResource InfoBannerForegroundBrush}" />
+          <StackPanel Spacing="2">
+            <TextBlock
+                            Text="Input support"
+                            FontWeight="SemiBold"
+                            Foreground="{StaticResource InfoBannerForegroundBrush}" />
+            <TextBlock
+                            Text="CSV extraction is designed to support configurable subject columns, including fields such as instance.subjects."
+                            TextWrapping="Wrap"
+                            Foreground="{StaticResource InfoBannerForegroundBrush}" />
           </StackPanel>
-
-          <TextBlock
-                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                        Text="{x:Bind ViewModel.StatusMessage, Mode=OneWay}"
-                        TextWrapping="WrapWholeWords" />
         </StackPanel>
       </Border>
 
-      <Border
-                Padding="20"
-                CornerRadius="12"
-                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                BorderThickness="1"
-                Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}">
-        <Grid ColumnSpacing="24" RowSpacing="10">
-          <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-          </Grid.RowDefinitions>
-          <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*" />
-            <ColumnDefinition Width="*" />
-          </Grid.ColumnDefinitions>
+      <Border Style="{StaticResource AppCardBorderStyle}">
+        <StackPanel Spacing="12">
+          <TextBlock
+                        Text="Choose input file"
+                        Style="{StaticResource PageSectionTitleTextBlockStyle}" />
 
-          <TextBlock Grid.Row="0" Grid.Column="0" Text="File name" FontWeight="SemiBold" />
-          <TextBlock Grid.Row="0" Grid.Column="1" Text="{x:Bind ViewModel.FileNameDisplay, Mode=OneWay}" />
+          <TextBox
+                        Text="{x:Bind ViewModel.InputFilePath, Mode=OneWay}"
+                        IsReadOnly="True"
+                        PlaceholderText="Choose a .txt or .csv file"
+                        MinHeight="40"
+                        Foreground="{StaticResource ContentForegroundBrush}" />
 
-          <TextBlock Grid.Row="1" Grid.Column="0" Text="Detected kind" FontWeight="SemiBold" />
-          <TextBlock Grid.Row="1" Grid.Column="1" Text="{x:Bind ViewModel.DetectedInputKind, Mode=OneWay}" />
+          <StackPanel Orientation="Horizontal" Spacing="12">
+            <Button
+                            Content="Choose File"
+                            Click="ChooseFileButton_OnClick"
+                            MinWidth="128" />
+            <Button
+                            Content="Reload Extraction"
+                            Click="ReloadButton_OnClick"
+                            MinWidth="148"
+                            IsEnabled="{x:Bind ViewModel.CanReloadExtraction, Mode=OneWay}" />
+          </StackPanel>
 
-          <TextBlock Grid.Row="2" Grid.Column="0" Text="Total records read" FontWeight="SemiBold" />
-          <TextBlock Grid.Row="2" Grid.Column="1" Text="{x:Bind ViewModel.TotalRecordsRead, Mode=OneWay}" />
-        </Grid>
+          <TextBlock
+                        Text="{x:Bind ViewModel.StatusMessage, Mode=OneWay}"
+                        Style="{StaticResource PageMutedTextBlockStyle}" />
+        </StackPanel>
       </Border>
 
-      <Border
-                Padding="20"
-                CornerRadius="12"
-                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                BorderThickness="1"
-                Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}">
-        <Grid ColumnSpacing="24" RowSpacing="10">
-          <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-          </Grid.RowDefinitions>
-          <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*" />
-            <ColumnDefinition Width="*" />
-          </Grid.ColumnDefinitions>
+      <Grid ColumnSpacing="16">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="*" />
+          <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
 
-          <TextBlock Grid.Row="0" Grid.Column="0" Text="Extracted subjects" FontWeight="SemiBold" />
-          <TextBlock Grid.Row="0" Grid.Column="1" Text="{x:Bind ViewModel.ExtractedSubjectCount, Mode=OneWay}" />
+        <Border Grid.Column="0" Style="{StaticResource AppCardBorderStyle}">
+          <Grid ColumnSpacing="24" RowSpacing="10">
+            <Grid.RowDefinitions>
+              <RowDefinition Height="Auto" />
+              <RowDefinition Height="Auto" />
+              <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="*" />
+              <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
 
-          <TextBlock Grid.Row="1" Grid.Column="0" Text="Ignored blanks" FontWeight="SemiBold" />
-          <TextBlock Grid.Row="1" Grid.Column="1" Text="{x:Bind ViewModel.BlankOrIgnoredCount, Mode=OneWay}" />
+            <TextBlock Grid.Row="0" Grid.Column="0" Text="File name" Style="{StaticResource MetricLabelTextBlockStyle}" />
+            <TextBlock Grid.Row="0" Grid.Column="1" Text="{x:Bind ViewModel.FileNameDisplay, Mode=OneWay}" Style="{StaticResource MetricValueTextBlockStyle}" />
 
-          <TextBlock Grid.Row="2" Grid.Column="0" Text="Duplicates" FontWeight="SemiBold" />
-          <TextBlock Grid.Row="2" Grid.Column="1" Text="{x:Bind ViewModel.DuplicateCount, Mode=OneWay}" />
+            <TextBlock Grid.Row="1" Grid.Column="0" Text="Detected kind" Style="{StaticResource MetricLabelTextBlockStyle}" />
+            <TextBlock Grid.Row="1" Grid.Column="1" Text="{x:Bind ViewModel.DetectedInputKind, Mode=OneWay}" Style="{StaticResource MetricValueTextBlockStyle}" />
 
-          <TextBlock Grid.Row="3" Grid.Column="0" Text="Parse warnings" FontWeight="SemiBold" />
-          <TextBlock Grid.Row="3" Grid.Column="1" Text="{x:Bind ViewModel.ParseWarningCount, Mode=OneWay}" />
-        </Grid>
-      </Border>
+            <TextBlock Grid.Row="2" Grid.Column="0" Text="Total records read" Style="{StaticResource MetricLabelTextBlockStyle}" />
+            <TextBlock Grid.Row="2" Grid.Column="1" Text="{x:Bind ViewModel.TotalRecordsRead, Mode=OneWay}" Style="{StaticResource MetricValueTextBlockStyle}" />
+          </Grid>
+        </Border>
+
+        <Border Grid.Column="1" Style="{StaticResource AppCardBorderStyle}">
+          <Grid ColumnSpacing="24" RowSpacing="10">
+            <Grid.RowDefinitions>
+              <RowDefinition Height="Auto" />
+              <RowDefinition Height="Auto" />
+              <RowDefinition Height="Auto" />
+              <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="*" />
+              <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <TextBlock Grid.Row="0" Grid.Column="0" Text="Extracted subjects" Style="{StaticResource MetricLabelTextBlockStyle}" />
+            <TextBlock Grid.Row="0" Grid.Column="1" Text="{x:Bind ViewModel.ExtractedSubjectCount, Mode=OneWay}" Style="{StaticResource MetricAccentValueTextBlockStyle}" />
+
+            <TextBlock Grid.Row="1" Grid.Column="0" Text="Ignored blanks" Style="{StaticResource MetricLabelTextBlockStyle}" />
+            <TextBlock Grid.Row="1" Grid.Column="1" Text="{x:Bind ViewModel.BlankOrIgnoredCount, Mode=OneWay}" Style="{StaticResource MetricValueTextBlockStyle}" />
+
+            <TextBlock Grid.Row="2" Grid.Column="0" Text="Duplicates" Style="{StaticResource MetricLabelTextBlockStyle}" />
+            <TextBlock Grid.Row="2" Grid.Column="1" Text="{x:Bind ViewModel.DuplicateCount, Mode=OneWay}" Style="{StaticResource MetricValueTextBlockStyle}" />
+
+            <TextBlock Grid.Row="3" Grid.Column="0" Text="Parse warnings" Style="{StaticResource MetricLabelTextBlockStyle}" />
+            <TextBlock Grid.Row="3" Grid.Column="1" Text="{x:Bind ViewModel.ParseWarningCount, Mode=OneWay}" Style="{StaticResource MetricValueTextBlockStyle}" />
+          </Grid>
+        </Border>
+      </Grid>
     </StackPanel>
   </ScrollViewer>
 </Page>

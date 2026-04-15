@@ -1,66 +1,87 @@
 <Page
     x:Class="Bragi.App.WinUI.Pages.StartPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    RequestedTheme="Light"
+    Background="Transparent"
+    mc:Ignorable="d">
 
   <ScrollViewer>
     <StackPanel Padding="24" Spacing="16">
-      <Border
-                Padding="20"
-                CornerRadius="12"
-                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                BorderThickness="1"
-                Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}">
+
+      <Border Style="{StaticResource AppCardBorderStyle}">
         <StackPanel Spacing="10">
-          <TextBlock Text="Welcome to Bragi" Style="{StaticResource TitleMediumTextBlockStyle}" />
+          <TextBlock
+                        Text="Welcome to Bragi"
+                        Style="{StaticResource PageSectionTitleTextBlockStyle}" />
           <TextBlock
                         Text="Bragi is a configurable subject categorization tool for library workflows. It supports modern input processing while preserving compatibility with downstream text-file outputs."
-                        TextWrapping="WrapWholeWords" />
+                        Style="{StaticResource PageBodyTextBlockStyle}" />
         </StackPanel>
       </Border>
 
-      <Border
-                Padding="20"
-                CornerRadius="12"
-                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                BorderThickness="1"
-                Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}">
+      <Border Style="{StaticResource AppCardBorderStyle}">
         <StackPanel Spacing="10">
-          <TextBlock Text="Workflow" Style="{StaticResource TitleSmallTextBlockStyle}" />
-          <TextBlock Text="1. Load a supported input file." />
-          <TextBlock Text="2. Review extracted subjects and counts." />
-          <TextBlock Text="3. Preview category routing and uncategorized subjects." />
-          <TextBlock Text="4. Choose an output folder and generate final text files." />
+          <TextBlock
+                        Text="Workflow"
+                        Style="{StaticResource PageSubsectionTitleTextBlockStyle}" />
+          <TextBlock
+                        Text="1. Load a supported input file."
+                        Style="{StaticResource PageBodyTextBlockStyle}" />
+          <TextBlock
+                        Text="2. Review extracted subjects and counts."
+                        Style="{StaticResource PageBodyTextBlockStyle}" />
+          <TextBlock
+                        Text="3. Preview category routing and uncategorized subjects."
+                        Style="{StaticResource PageBodyTextBlockStyle}" />
+          <TextBlock
+                        Text="4. Choose an output folder and generate final text files."
+                        Style="{StaticResource PageBodyTextBlockStyle}" />
         </StackPanel>
       </Border>
 
-      <Border
-                Padding="20"
-                CornerRadius="12"
-                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                BorderThickness="1"
-                Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}">
-        <StackPanel Spacing="10">
-          <TextBlock Text="Supported inputs" Style="{StaticResource TitleSmallTextBlockStyle}" />
-          <TextBlock Text="- .txt files with one subject per line" />
-          <TextBlock Text="- .csv files with configurable subject extraction" />
-          <TextBlock Text="- CSVs that use fields like instance.subjects" />
-        </StackPanel>
-      </Border>
+      <Grid ColumnSpacing="16">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="*" />
+          <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
 
-      <Border
-                Padding="20"
-                CornerRadius="12"
-                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                BorderThickness="1"
-                Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}">
-        <StackPanel Spacing="10">
-          <TextBlock Text="Generated outputs" Style="{StaticResource TitleSmallTextBlockStyle}" />
-          <TextBlock Text="- one file per configured category" />
-          <TextBlock Text="- NotCategorizedSubjects.txt" />
-          <TextBlock Text="- RunSummary.txt" />
-        </StackPanel>
-      </Border>
+        <Border Grid.Column="0" Style="{StaticResource AppCardBorderStyle}">
+          <StackPanel Spacing="10">
+            <TextBlock
+                            Text="Supported inputs"
+                            Style="{StaticResource PageSubsectionTitleTextBlockStyle}" />
+            <TextBlock
+                            Text="- .txt files with one subject per line"
+                            Style="{StaticResource PageBodyTextBlockStyle}" />
+            <TextBlock
+                            Text="- .csv files with configurable subject extraction"
+                            Style="{StaticResource PageBodyTextBlockStyle}" />
+            <TextBlock
+                            Text="- CSVs that use fields like instance.subjects"
+                            Style="{StaticResource PageBodyTextBlockStyle}" />
+          </StackPanel>
+        </Border>
+
+        <Border Grid.Column="1" Style="{StaticResource AppCardBorderStyle}">
+          <StackPanel Spacing="10">
+            <TextBlock
+                            Text="Generated outputs"
+                            Style="{StaticResource PageSubsectionTitleTextBlockStyle}" />
+            <TextBlock
+                            Text="- one file per configured category"
+                            Style="{StaticResource PageBodyTextBlockStyle}" />
+            <TextBlock
+                            Text="- NotCategorizedSubjects.txt"
+                            Style="{StaticResource PageBodyTextBlockStyle}" />
+            <TextBlock
+                            Text="- RunSummary.txt"
+                            Style="{StaticResource PageBodyTextBlockStyle}" />
+          </StackPanel>
+        </Border>
+      </Grid>
     </StackPanel>
   </ScrollViewer>
 </Page>

@@ -19,6 +19,7 @@
     <None Remove="Pages\PreviewResultsPage.xaml" />
     <None Remove="Pages\ReviewSubjectsPage.xaml" />
     <None Remove="Pages\StartPage.xaml" />
+    <None Remove="Resources\ThemeResources.xaml" />
   </ItemGroup>
 
   <ItemGroup>
@@ -102,6 +103,11 @@
     </ItemGroup>
     <ItemGroup>
       <Page Update="Pages\StartPage.xaml">
+        <Generator>MSBuild:Compile</Generator>
+      </Page>
+    </ItemGroup>
+    <ItemGroup>
+      <Page Update="Resources\ThemeResources.xaml">
         <Generator>MSBuild:Compile</Generator>
       </Page>
     </ItemGroup>

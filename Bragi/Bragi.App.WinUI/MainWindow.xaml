@@ -6,7 +6,11 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
 
-  <Grid x:Name="RootGrid" Loaded="RootGrid_OnLoaded">
+  <Grid
+        x:Name="RootGrid"
+        Loaded="RootGrid_OnLoaded"
+        Background="{StaticResource ShellBackgroundBrush}">
+
     <Grid.RowDefinitions>
       <RowDefinition Height="*" />
       <RowDefinition Height="Auto" />
@@ -15,6 +19,8 @@
     <NavigationView
             x:Name="ShellNavigationView"
             Grid.Row="0"
+            Background="{StaticResource SidebarBackgroundBrush}"
+            RequestedTheme="Dark"
             IsBackButtonVisible="Collapsed"
             IsSettingsVisible="False"
             OpenPaneLength="240"
@@ -22,54 +28,73 @@
             PaneDisplayMode="Left"
             SelectionChanged="ShellNavigationView_OnSelectionChanged">
 
+      <NavigationView.PaneHeader>
+        <StackPanel Margin="0,12,0,16" Spacing="4">
+          <TextBlock
+                        Text="Bragi"
+                        FontSize="22"
+                        FontWeight="SemiBold"
+                        Foreground="{StaticResource SidebarForegroundBrush}" />
+          <TextBlock
+                        Text="{x:Bind ViewModel.CurrentStepTitle, Mode=OneWay}"
+                        FontSize="14"
+                        Foreground="{StaticResource SidebarMutedForegroundBrush}" />
+        </StackPanel>
+      </NavigationView.PaneHeader>
+
       <NavigationView.MenuItems>
         <NavigationViewItem
                     x:Name="StartNavigationItem"
-                    Tag="0"
-                    Content="Start">
+                    Content="Start"
+                    Tag="Start">
           <NavigationViewItem.Icon>
-            <SymbolIcon Symbol="Home" />
+            <FontIcon Glyph="&#xE80F;" />
           </NavigationViewItem.Icon>
         </NavigationViewItem>
 
         <NavigationViewItem
                     x:Name="LoadInputNavigationItem"
-                    Tag="1"
-                    Content="Load Input">
+                    Content="Load Input"
+                    Tag="LoadInput">
           <NavigationViewItem.Icon>
-            <SymbolIcon Symbol="OpenFile" />
+            <FontIcon Glyph="&#xE8B5;" />
           </NavigationViewItem.Icon>
         </NavigationViewItem>
 
         <NavigationViewItem
                     x:Name="ReviewSubjectsNavigationItem"
-                    Tag="2"
-                    Content="Review Subjects">
+                    Content="Review Subjects"
+                    Tag="ReviewSubjects">
           <NavigationViewItem.Icon>
-            <SymbolIcon Symbol="List" />
+            <FontIcon Glyph="&#xE9D5;" />
           </NavigationViewItem.Icon>
         </NavigationViewItem>
 
         <NavigationViewItem
                     x:Name="PreviewResultsNavigationItem"
-                    Tag="3"
-                    Content="Preview Results">
+                    Content="Preview Results"
+                    Tag="PreviewResults">
           <NavigationViewItem.Icon>
-            <SymbolIcon Symbol="Preview" />
+            <FontIcon Glyph="&#xE8A5;" />
           </NavigationViewItem.Icon>
         </NavigationViewItem>
 
         <NavigationViewItem
                     x:Name="ExportFinishNavigationItem"
-                    Tag="4"
-                    Content="Export &amp; Finish">
+                    Content="Export &amp; Finish"
+                    Tag="ExportFinish">
           <NavigationViewItem.Icon>
-            <SymbolIcon Symbol="Save" />
+            <FontIcon Glyph="&#xE898;" />
           </NavigationViewItem.Icon>
         </NavigationViewItem>
       </NavigationView.MenuItems>
 
-      <Grid Padding="24" RowSpacing="16">
+      <Grid
+                RequestedTheme="Light"
+                Background="{StaticResource ContentBackgroundBrush}"
+                Padding="{StaticResource ShellPadding}"
+                RowSpacing="16">
+
         <Grid.RowDefinitions>
           <RowDefinition Height="Auto" />
           <RowDefinition Height="Auto" />
@@ -79,36 +104,36 @@
         <TextBlock
                     Grid.Row="0"
                     Text="{x:Bind ViewModel.ShellTitle, Mode=OneWay}"
-                    Style="{StaticResource TitleLargeTextBlockStyle}" />
+                    Style="{StaticResource PageTitleTextBlockStyle}" />
 
         <StackPanel Grid.Row="1" Spacing="4">
           <TextBlock
                         Text="{x:Bind ViewModel.CurrentStepTitle, Mode=OneWay}"
-                        Style="{StaticResource TitleMediumTextBlockStyle}" />
+                        Style="{StaticResource PageSectionTitleTextBlockStyle}" />
           <TextBlock
                         Text="{x:Bind ViewModel.CurrentStepDescription, Mode=OneWay}"
-                        TextWrapping="WrapWholeWords"
-                        Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                        Style="{StaticResource PageMutedTextBlockStyle}" />
         </StackPanel>
 
         <Border
                     Grid.Row="2"
-                    Padding="0"
-                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                    BorderThickness="1"
-                    CornerRadius="12"
-                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
-          <Frame x:Name="ContentFrame" />
+                    RequestedTheme="Light"
+                    Style="{StaticResource AppCardBorderStyle}">
+
+          <Frame
+                        x:Name="ContentFrame"
+                        RequestedTheme="Light" />
         </Border>
       </Grid>
     </NavigationView>
 
     <Border
             Grid.Row="1"
-            Padding="20,14"
-            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-            BorderThickness="0,1,0,0"
-            Background="{ThemeResource LayerFillColorDefaultBrush}">
+            Padding="{StaticResource FooterPadding}"
+            Background="{StaticResource FooterBackgroundBrush}"
+            BorderBrush="{StaticResource FooterBorderBrush}"
+            BorderThickness="0,1,0,0">
+
       <Grid ColumnSpacing="12">
         <Grid.ColumnDefinitions>
           <ColumnDefinition Width="*" />
@@ -122,16 +147,20 @@
                     Orientation="Horizontal"
                     Spacing="10"
                     VerticalAlignment="Center">
+
           <ProgressRing
                         Width="18"
                         Height="18"
                         IsActive="{x:Bind ViewModel.IsBusy, Mode=OneWay}" />
+
           <TextBlock
                         VerticalAlignment="Center"
+                        Foreground="{StaticResource SidebarForegroundBrush}"
                         Text="{x:Bind ViewModel.BusyStatusText, Mode=OneWay}" />
+
           <TextBlock
                         VerticalAlignment="Center"
-                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        Foreground="{StaticResource SidebarMutedForegroundBrush}"
                         Text="{x:Bind ViewModel.NavigationStatusText, Mode=OneWay}" />
         </StackPanel>
 
