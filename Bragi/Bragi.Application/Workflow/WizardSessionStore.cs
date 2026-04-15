@@ -131,7 +131,7 @@ public sealed class WizardSessionStore
             GeneratedFiles = Array.Empty<string>();
 
             State = BuildState(
-                currentStepIndex: 1,
+                currentStepIndex: Math.Max(State.CurrentStepIndex, 1),
                 isInputLoaded: false,
                 isExtractionReviewComplete: false,
                 hasPreview: false,
@@ -173,7 +173,7 @@ public sealed class WizardSessionStore
             GeneratedFiles = Array.Empty<string>();
 
             State = BuildState(
-                currentStepIndex: Math.Max(State.CurrentStepIndex, 2),
+                currentStepIndex: Math.Max(State.CurrentStepIndex, 1),
                 isInputLoaded: true,
                 isExtractionReviewComplete: false,
                 hasPreview: false,
@@ -350,7 +350,7 @@ public sealed class WizardSessionStore
         GeneratedFiles = Array.Empty<string>();
 
         State = BuildState(
-            currentStepIndex: Math.Min(State.CurrentStepIndex, 3),
+            currentStepIndex: State.CurrentStepIndex,
             isInputLoaded: ExtractedSubjects is not null,
             isExtractionReviewComplete: State.IsExtractionReviewComplete,
             hasPreview: LastCategorizationResult is not null,
