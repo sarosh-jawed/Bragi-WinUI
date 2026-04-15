@@ -48,18 +48,47 @@ public sealed partial class MainWindow : Window
             return;
         }
 
-        if (args.SelectedItemContainer is not NavigationViewItem navigationViewItem)
+        if (args.SelectedItemContainer is not NavigationViewItem selectedItem)
         {
             return;
         }
 
-        if (navigationViewItem.Tag is not string rawStepIndex ||
-            !int.TryParse(rawStepIndex, out var stepIndex))
+        var requestedStepTag = selectedItem.Tag?.ToString();
+
+        if (string.IsNullOrWhiteSpace(requestedStepTag))
         {
             return;
         }
 
-        ViewModel.GoToStep(stepIndex);
+        switch (requestedStepTag)
+        {
+            case "Start":
+                NavigateFromMenuToStep(0);
+                break;
+
+            case "LoadInput":
+                NavigateFromMenuToStep(1);
+                break;
+
+            case "ReviewSubjects":
+                NavigateFromMenuToStep(2);
+                break;
+
+            case "PreviewResults":
+                NavigateFromMenuToStep(3);
+                break;
+
+            case "ExportFinish":
+                NavigateFromMenuToStep(4);
+                break;
+        }
+    }
+
+    private void NavigateFromMenuToStep(int targetStepIndex)
+    {
+        ViewModel.GoToStep(targetStepIndex);
+        RefreshShellNavigationState();
+        NavigateToCurrentPage();
     }
 
     private void BackButton_OnClick(object sender, RoutedEventArgs e)
@@ -85,26 +114,16 @@ public sealed partial class MainWindow : Window
 
     private void RefreshShellNavigationState()
     {
-        ApplyNavigationItemState(StartNavigationItem, 0);
-        ApplyNavigationItemState(LoadInputNavigationItem, 1);
-        ApplyNavigationItemState(ReviewSubjectsNavigationItem, 2);
-        ApplyNavigationItemState(PreviewResultsNavigationItem, 3);
-        ApplyNavigationItemState(ExportFinishNavigationItem, 4);
-
-        SynchronizeSelectedNavigationItem();
-    }
-
-    private void ApplyNavigationItemState(NavigationViewItem navigationViewItem, int stepIndex)
-    {
-        navigationViewItem.IsEnabled = ViewModel.IsStepEnabled(stepIndex);
-    }
-
-    private void SynchronizeSelectedNavigationItem()
-    {
         _isUpdatingShellSelection = true;
 
         try
         {
+            StartNavigationItem.IsEnabled = ViewModel.IsStepEnabled(0);
+            LoadInputNavigationItem.IsEnabled = ViewModel.IsStepEnabled(1);
+            ReviewSubjectsNavigationItem.IsEnabled = ViewModel.IsStepEnabled(2);
+            PreviewResultsNavigationItem.IsEnabled = ViewModel.IsStepEnabled(3);
+            ExportFinishNavigationItem.IsEnabled = ViewModel.IsStepEnabled(4);
+
             ShellNavigationView.SelectedItem = ViewModel.CurrentStepIndex switch
             {
                 0 => StartNavigationItem,
@@ -123,14 +142,12 @@ public sealed partial class MainWindow : Window
 
     private void NavigateToCurrentPage()
     {
-        var targetPageType = ViewModel.CurrentPageType;
+        var targetPage = ViewModel.CurrentPageType;
 
-        if (ContentFrame.Content?.GetType() == targetPageType)
+        if (ContentFrame.CurrentSourcePageType != targetPage)
         {
-            return;
+            ContentFrame.Navigate(targetPage);
         }
-
-        ContentFrame.Navigate(targetPageType);
     }
 
     private void MainWindow_OnActivated(object sender, WindowActivatedEventArgs args)

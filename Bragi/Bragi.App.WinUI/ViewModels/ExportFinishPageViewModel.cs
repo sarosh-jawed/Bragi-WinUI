@@ -10,6 +10,7 @@ using Bragi.App.WinUI.ViewModels.Base;
 using Bragi.Application.Contracts;
 using Bragi.Application.Workflow;
 using Microsoft.Extensions.Logging;
+using Microsoft.UI.Xaml;
 
 namespace Bragi.App.WinUI.ViewModels;
 
@@ -70,6 +71,15 @@ public sealed class ExportFinishPageViewModel : ObservableObject
 
     public bool HasGeneratedFiles => GeneratedFiles.Count > 0;
 
+    public bool CanOpenOutputFolder =>
+        HasGeneratedFiles || !string.IsNullOrWhiteSpace(SelectedOutputFolder);
+
+    public bool CanOpenLogFolder =>
+        !string.IsNullOrWhiteSpace(LogsFolderPath);
+
+    public Visibility ExportResultsVisibility =>
+        HasGeneratedFiles ? Visibility.Visible : Visibility.Collapsed;
+
     public void SetSelectedOutputFolder(string selectedOutputFolder)
     {
         if (string.IsNullOrWhiteSpace(selectedOutputFolder))
@@ -127,7 +137,7 @@ public sealed class ExportFinishPageViewModel : ObservableObject
         }
         finally
         {
-            OnPropertyChanged(nameof(CanGenerateOutput));
+            RaiseComputedPropertyChanges();
         }
     }
 
@@ -161,8 +171,7 @@ public sealed class ExportFinishPageViewModel : ObservableObject
 
         RunSummaryText = BuildRunSummaryText();
 
-        OnPropertyChanged(nameof(CanGenerateOutput));
-        OnPropertyChanged(nameof(HasGeneratedFiles));
+        RaiseComputedPropertyChanges();
     }
 
     private string BuildRunSummaryText()
@@ -217,5 +226,14 @@ public sealed class ExportFinishPageViewModel : ObservableObject
     private void OnSessionChanged(object? sender, EventArgs e)
     {
         RefreshFromSession();
+    }
+
+    private void RaiseComputedPropertyChanges()
+    {
+        OnPropertyChanged(nameof(CanGenerateOutput));
+        OnPropertyChanged(nameof(HasGeneratedFiles));
+        OnPropertyChanged(nameof(CanOpenOutputFolder));
+        OnPropertyChanged(nameof(CanOpenLogFolder));
+        OnPropertyChanged(nameof(ExportResultsVisibility));
     }
 }
