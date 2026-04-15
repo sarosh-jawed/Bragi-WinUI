@@ -1,21 +1,88 @@
 <Page
     x:Class="Bragi.App.WinUI.Pages.ReviewSubjectsPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:viewModels="using:Bragi.App.WinUI.ViewModels">
 
-  <Grid Padding="24">
-    <Border
-            Padding="20"
-            CornerRadius="12"
-            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-            BorderThickness="1"
-            Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}">
-      <StackPanel Spacing="10">
-        <TextBlock Text="Review Subjects" Style="{StaticResource TitleMediumTextBlockStyle}" />
-        <TextBlock
-                    Text="This page will host extraction review content. The shell already knows this is a distinct linear step and keeps it locked until input is loaded."
-                    TextWrapping="WrapWholeWords" />
-      </StackPanel>
-    </Border>
-  </Grid>
+  <ScrollViewer>
+    <StackPanel Padding="24" Spacing="16">
+      <Border
+                Padding="20"
+                CornerRadius="12"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="1"
+                Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}">
+        <StackPanel Spacing="12">
+          <TextBlock Text="Review extracted subjects" Style="{StaticResource TitleMediumTextBlockStyle}" />
+          <TextBlock
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        Text="{x:Bind ViewModel.StatusMessage, Mode=OneWay}"
+                        TextWrapping="WrapWholeWords" />
+          <Button
+                        Content="Mark Review Complete"
+                        Click="MarkReviewCompleteButton_OnClick" />
+        </StackPanel>
+      </Border>
+
+      <Border
+                Padding="20"
+                CornerRadius="12"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="1"
+                Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}">
+        <Grid ColumnSpacing="24" RowSpacing="10">
+          <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+          </Grid.RowDefinitions>
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="*" />
+          </Grid.ColumnDefinitions>
+
+          <TextBlock Grid.Row="0" Grid.Column="0" Text="Extracted subjects" FontWeight="SemiBold" />
+          <TextBlock Grid.Row="0" Grid.Column="1" Text="{x:Bind ViewModel.ExtractedSubjectCount, Mode=OneWay}" />
+
+          <TextBlock Grid.Row="1" Grid.Column="0" Text="Duplicates" FontWeight="SemiBold" />
+          <TextBlock Grid.Row="1" Grid.Column="1" Text="{x:Bind ViewModel.DuplicateCount, Mode=OneWay}" />
+
+          <TextBlock Grid.Row="2" Grid.Column="0" Text="Ignored blanks" FontWeight="SemiBold" />
+          <TextBlock Grid.Row="2" Grid.Column="1" Text="{x:Bind ViewModel.BlankOrIgnoredCount, Mode=OneWay}" />
+
+          <TextBlock Grid.Row="3" Grid.Column="0" Text="Parse warnings" FontWeight="SemiBold" />
+          <TextBlock Grid.Row="3" Grid.Column="1" Text="{x:Bind ViewModel.ParseWarningCount, Mode=OneWay}" />
+        </Grid>
+      </Border>
+
+      <Border
+                Padding="20"
+                CornerRadius="12"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="1"
+                Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}">
+        <StackPanel Spacing="12">
+          <TextBlock Text="Preview list" Style="{StaticResource TitleSmallTextBlockStyle}" />
+          <TextBlock
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        Text="{x:Bind ViewModel.PreviewWindowText, Mode=OneWay}" />
+
+          <ListView ItemsSource="{x:Bind ViewModel.Subjects, Mode=OneWay}">
+            <ListView.ItemTemplate>
+              <DataTemplate>
+                <Border Padding="8">
+                  <StackPanel Spacing="4">
+                    <TextBlock Text="{Binding Subject}" FontWeight="SemiBold" />
+                    <TextBlock Text="{Binding SourceMetadata}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                    <TextBlock Text="{Binding OptionalMetadata}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                  </StackPanel>
+                </Border>
+              </DataTemplate>
+            </ListView.ItemTemplate>
+          </ListView>
+        </StackPanel>
+      </Border>
+    </StackPanel>
+  </ScrollViewer>
 </Page>

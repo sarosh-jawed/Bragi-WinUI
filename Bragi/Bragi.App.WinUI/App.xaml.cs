@@ -18,6 +18,7 @@ using Bragi.Infrastructure.Categorization;
 using Bragi.Infrastructure.Export;
 using Bragi.Application.Workflow;
 using Bragi.Infrastructure.Workflow;
+using Bragi.App.WinUI.ViewModels.Base;
 
 namespace Bragi.App.WinUI;
 
@@ -27,6 +28,18 @@ public partial class App : Microsoft.UI.Xaml.Application
     private readonly ILogger<App> _logger;
 
     public static IHost AppHost { get; } = CreateHostBuilder().Build();
+
+    public static App CurrentApp =>
+    Microsoft.UI.Xaml.Application.Current as App
+    ?? throw new InvalidOperationException("The current application is not Bragi.App.WinUI.App.");
+
+    public static Window? MainAppWindow => CurrentApp._mainWindow;
+
+    public static T GetService<T>()
+        where T : notnull
+    {
+        return AppHost.Services.GetRequiredService<T>();
+    }
 
     public App()
     {
@@ -134,6 +147,10 @@ public partial class App : Microsoft.UI.Xaml.Application
                 });
 
                 services.AddSingleton<MainWindowViewModel>();
+                services.AddSingleton<LoadInputPageViewModel>();
+                services.AddSingleton<ReviewSubjectsPageViewModel>();
+                services.AddSingleton<PreviewResultsPageViewModel>();
+                services.AddSingleton<ExportFinishPageViewModel>();
                 services.AddSingleton<MainWindow>();
             });
     }

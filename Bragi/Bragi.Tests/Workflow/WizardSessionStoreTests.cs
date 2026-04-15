@@ -103,6 +103,22 @@ public sealed class WizardSessionStoreTests
         Assert.Null(store.CurrentCancellationTokenSource);
     }
 
+    [Fact]
+    public void SetExtractionResult_KeepsUserOnLoadInputStep_WhileUnlockingReviewStep()
+    {
+        var store = new WizardSessionStore();
+
+        store.SetCurrentStep(1);
+
+        store.SetExtractionResult(CreateExtractionResult("C:\\Input\\subjects.txt", InputFileKind.PlainText));
+
+        Assert.Equal(1, store.State.CurrentStepIndex);
+        Assert.True(store.State.IsInputLoaded);
+        Assert.False(store.State.IsStepLocked(2));
+        Assert.True(store.State.IsStepLocked(3));
+        Assert.True(store.State.IsStepLocked(4));
+    }
+
     private static ExtractionResult CreateExtractionResult(string sourceFile, InputFileKind inputFileKind)
     {
         var extractedSubject = new ExtractedSubject(

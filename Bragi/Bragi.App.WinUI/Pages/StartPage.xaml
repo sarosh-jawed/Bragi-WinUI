@@ -14,7 +14,7 @@
         <StackPanel Spacing="10">
           <TextBlock Text="Welcome to Bragi" Style="{StaticResource TitleMediumTextBlockStyle}" />
           <TextBlock
-                        Text="This shell establishes the professional Bragi workflow foundation. Use the stepper on the left and the footer actions below to move through the run in a guided, linear way."
+                        Text="Bragi is a configurable subject categorization tool for library workflows. It supports modern input processing while preserving compatibility with downstream text-file outputs."
                         TextWrapping="WrapWholeWords" />
         </StackPanel>
       </Border>
@@ -25,13 +25,40 @@
                 BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                 BorderThickness="1"
                 Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}">
-        <StackPanel Spacing="8">
-          <TextBlock Text="Workflow steps" Style="{StaticResource TitleSmallTextBlockStyle}" />
-          <TextBlock Text="1. Start" />
-          <TextBlock Text="2. Load Input" />
-          <TextBlock Text="3. Review Subjects" />
-          <TextBlock Text="4. Preview Results" />
-          <TextBlock Text="5. Export &amp; Finish" />
+        <StackPanel Spacing="10">
+          <TextBlock Text="Workflow" Style="{StaticResource TitleSmallTextBlockStyle}" />
+          <TextBlock Text="1. Load a supported input file." />
+          <TextBlock Text="2. Review extracted subjects and counts." />
+          <TextBlock Text="3. Preview category routing and uncategorized subjects." />
+          <TextBlock Text="4. Choose an output folder and generate final text files." />
+        </StackPanel>
+      </Border>
+
+      <Border
+                Padding="20"
+                CornerRadius="12"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="1"
+                Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}">
+        <StackPanel Spacing="10">
+          <TextBlock Text="Supported inputs" Style="{StaticResource TitleSmallTextBlockStyle}" />
+          <TextBlock Text="- .txt files with one subject per line" />
+          <TextBlock Text="- .csv files with configurable subject extraction" />
+          <TextBlock Text="- CSVs that use fields like instance.subjects" />
+        </StackPanel>
+      </Border>
+
+      <Border
+                Padding="20"
+                CornerRadius="12"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="1"
+                Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}">
+        <StackPanel Spacing="10">
+          <TextBlock Text="Generated outputs" Style="{StaticResource TitleSmallTextBlockStyle}" />
+          <TextBlock Text="- one file per configured category" />
+          <TextBlock Text="- NotCategorizedSubjects.txt" />
+          <TextBlock Text="- RunSummary.txt" />
         </StackPanel>
       </Border>
     </StackPanel>
