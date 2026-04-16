@@ -56,6 +56,56 @@ public sealed class SubjectExtractionServiceTests
     }
 
     [Fact]
+    public async Task ExtractFromCsvAsync_SplitsSemicolonDelimitedSubjects_WhenJsonArrayModeIsDisabled()
+    {
+        var filePath = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}.csv");
+
+        try
+        {
+            var csvContent =
+                "instance.id,instance.title,instance.subjects\r\n" +
+                "row-1,Title One,\"Art;Business;History\"\r\n";
+
+            await File.WriteAllTextAsync(filePath, csvContent);
+
+            var inputIngestService = new InputIngestService(NullLogger<InputIngestService>.Instance);
+            var subjectExtractionService = new SubjectExtractionService(NullLogger<SubjectExtractionService>.Instance);
+
+            var rows = await inputIngestService.ReadCsvRowsAsync(filePath);
+
+            var result = await subjectExtractionService.ExtractFromCsvAsync(
+                filePath,
+                rows,
+                new CsvColumns
+                {
+                    SubjectColumnName = "instance.subjects",
+                    TitleColumnName = "instance.title",
+                    RecordIdColumnName = "instance.id",
+                    SubjectColumnContainsJsonArray = false
+                },
+                new InputOptions
+                {
+                    CaptureCsvSourceTitle = true,
+                    CaptureCsvSourceRecordId = true
+                },
+                new BehaviorOptions());
+
+            Assert.Equal(1, result.TotalRecordsRead);
+            Assert.Equal(3, result.ExtractedCount);
+            Assert.Equal("Art", result.Subjects[0].Entry.OriginalSubject.Value);
+            Assert.Equal("Business", result.Subjects[1].Entry.OriginalSubject.Value);
+            Assert.Equal("History", result.Subjects[2].Entry.OriginalSubject.Value);
+        }
+        finally
+        {
+            if (File.Exists(filePath))
+            {
+                File.Delete(filePath);
+            }
+        }
+    }
+
+    [Fact]
     public async Task ExtractFromCsvAsync_ExtractsJsonArraySubjects_AndPreservesRowMetadata()
     {
         var filePath = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}.csv");
@@ -114,5 +164,6 @@ public sealed class SubjectExtractionServiceTests
                 File.Delete(filePath);
             }
         }
+
     }
 }

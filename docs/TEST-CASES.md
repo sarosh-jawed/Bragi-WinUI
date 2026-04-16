@@ -1,109 +1,85 @@
 # Bragi Test Cases
 
-This document tracks the manual and automated validation approach for Bragi.
-
-At Phase 1, the application has not been implemented yet, so this document establishes the baseline testing strategy and the future regression targets that later phases must satisfy.
+This document tracks the automated and manual validation approach for Bragi as of Phase 15.
 
 ---
 
-## 1. Testing Goals
+## 1. Scope
 
-Bragi must be validated across:
-- file loading
+Bragi must now be trusted across:
+
+- config loading and validation
 - input type detection
 - CSV parsing
-- subject extraction
+- plain text extraction
+- CSV subject extraction
 - whitespace normalization
-- blank handling
-- categorization
-- exclusion rules
-- multi-match behavior
-- uncategorized handling
-- export generation
+- duplicate counting
+- categorization behavior
+- fiction exclusion behavior
+- juvenile exclusion behavior
+- multi-category matching
+- uncategorized routing
+- export file generation
 - run summary generation
-- logging
+- workflow state integrity
+- user-selected output folder behavior
 
 ---
 
-## 2. Phase 1 Baseline Checks
+## 2. Automated Coverage
 
-These checks confirm the repository baseline is professional before coding begins.
+Automated tests live in `Bragi.Tests`.
 
-### Repository Baseline
-- `README.md` exists and describes the tool clearly
-- `CHANGELOG.md` exists
-- `LICENSE` exists
-- `.editorconfig` exists
-- `.gitignore` exists
-- `docs/CONVENTIONS.md` exists
-- `docs/TEST-CASES.md` exists
-- `docs/SCREENSHOTS.md` exists
+### Config validation
+- actual app `config.json` loads successfully
+- category rules validate successfully
+- legacy rule set keys are present
+- output file names remain unique
 
-### Branching Baseline
-- `main` remains stable
-- phase work is done on a dedicated feature branch
-- local working tree is clean before push
+### Input ingestion
+- `.txt` files detect as plain text
+- `.csv` files detect as CSV
+- unsupported extensions return unknown when fallback is disabled
+- unsupported extensions return plain text when fallback is enabled
+- CSV rows load correctly, including duplicate header handling
 
----
-
-## 3. Planned Functional Test Areas
-
-These are the minimum functional areas to validate once implementation begins.
-
-### Plain Text Input
-- one subject per line is loaded correctly
-- blank lines are handled safely
-- extra surrounding whitespace is normalized as configured
-
-### CSV Input
-- CSV file is recognized correctly
-- configured subject column is selected correctly
-- JSON-like subject arrays stored as text are extracted safely
-- malformed or empty rows are counted and logged safely
+### Subject extraction
+- plain text extraction works
+- blank lines are ignored safely
+- duplicates are counted
+- CSV JSON-array extraction works
+- semicolon-delimited subject strings split correctly when JSON-array mode is disabled
 
 ### Categorization
-- matching is case-insensitive when configured
-- configured exclusions are respected
-- fiction exclusions work correctly
-- juvenile and children exclusions work correctly
-- one subject may match multiple categories when enabled
-- unmatched items route to uncategorized output
+- art subject matches art
+- fiction subject only routes to fiction when normal category disables fiction
+- juvenile subject is excluded from normal categories
+- one subject may match multiple categories
+- uncategorized subject routes correctly
+- blank-after-normalization subject routes to uncategorized correctly
+- mixed case text still matches
+- extra spaces still match
 
 ### Export
-- every configured category file is generated
+- category files are generated
 - uncategorized file is generated
 - run summary file is generated
-- preview counts match export counts
-- summary counts match preview counts
+- dummy fixture export produces the expected file set
 
-### Logging
-- pipeline stages are visible in logs
-- warnings are meaningful
-- support diagnostics are possible without exposing raw technical detail in the UI
+### Workflow
+- wizard state remains consistent
+- step locking works correctly
+- cancellation leaves session state stable
+- export completion state is preserved correctly
 
----
+### Regression fixture
+Primary committed regression fixture:
 
-## 4. Primary Regression Fixture
-
-Primary planned regression fixture:
-- `bragi_dummy_lcc_instance_items.csv`
-
-Planned long-term location:
 - `Bragi.Tests/Fixtures/bragi_dummy_lcc_instance_items.csv`
 
-This fixture is intended to validate the complete Bragi pipeline:
-- CSV loading
-- subject extraction
-- normalization
-- categorization
-- exclusions
-- multi-match behavior
-- uncategorized handling
-- export generation
-- run summary generation
-- logging
+Expected benchmark totals:
 
-### Expected benchmark totals for the dummy CSV
 - total CSV rows = 30
 - rows with non-empty subject arrays = 29
 - rows with empty subjects = 1
@@ -112,54 +88,137 @@ This fixture is intended to validate the complete Bragi pipeline:
 - categorized assignments = 77
 - multi-match subjects = 3
 
-These values become a regression checkpoint once the implementation exists.
+---
+
+## 3. Manual Validation Cases
+
+Use the app for these manual checks before release.
+
+### Case 1: Plain text input
+1. Launch Bragi.
+2. Go to **Load Input**.
+3. Choose a `.txt` file with one subject per line.
+4. Confirm the detected kind is **PlainText**.
+5. Confirm extracted subject counts appear correctly.
+6. Proceed through preview and export.
+
+Expected result:
+- extraction succeeds
+- preview succeeds
+- export succeeds
+- run summary matches the plain text input
+
+### Case 2: CSV extraction
+1. Launch Bragi.
+2. Choose the dummy CSV fixture.
+3. Confirm the detected kind is **Csv**.
+4. Confirm extraction shows:
+   - total records read = 30
+   - extracted subjects = 80
+   - ignored blanks = 1
+   - duplicates = 10
+   - parse warnings = 0
+
+Expected result:
+- extraction metrics match the benchmark
+
+### Case 3: Duplicate subject case
+1. Load a file with repeated subject values.
+2. Confirm duplicate count increases.
+3. Confirm extraction still succeeds.
+
+Expected result:
+- duplicates are counted without blocking processing
+
+### Case 4: Fiction exclusion case
+1. Load a subject set containing a non-fiction keyword plus fiction.
+2. Generate preview.
+3. Confirm the subject routes to **Fiction** when the non-fiction rule disables fiction.
+
+Expected result:
+- fiction-protected categories do not claim fiction subjects
+
+### Case 5: Juvenile exclusion case
+1. Load a subject set containing a juvenile-prefixed subject that also contains a normal category keyword.
+2. Generate preview.
+
+Expected result:
+- the normal category does not claim the subject when juvenile exclusion applies
+
+### Case 6: Multiple category case
+1. Load a subject such as one that should match more than one category.
+2. Generate preview.
+
+Expected result:
+- the subject appears in multiple category groups when multi-match is enabled
+
+### Case 7: Uncategorized case
+1. Load a subject that does not fit any configured category.
+2. Generate preview.
+
+Expected result:
+- the subject appears in the uncategorized preview
+- the uncategorized reason is visible
+
+### Case 8: Export file verification
+1. Load the dummy CSV.
+2. Complete review.
+3. Generate preview.
+4. Choose an output folder explicitly.
+5. Export.
+
+Expected result:
+- category files are created
+- `NotCategorizedSubjects.txt` is created
+- `RunSummary.txt` is created
+- output folder opens successfully
+- output paths shown in the app match the actual files
+
+### Case 9: Output folder selection requirement
+1. Load input and generate preview.
+2. Do not choose an output folder.
+3. Attempt export.
+
+Expected result:
+- export does not proceed
+- the app shows a friendly message asking the user to choose an output folder first
 
 ---
 
-## 5. Must-Have Future Test Cases
+## 4. Local-only exploratory validation with the original library CSV
 
-The following tests must exist in later phases.
+The original full library CSV should remain local and should not be committed to the repository.
 
-### Extraction Tests
-- plain text extraction
-- CSV extraction from configured column
-- empty subject row handling
-- whitespace normalization
-- duplicate subject counting
+Use it only for exploratory validation:
 
-### Categorization Tests
-- art subject matches art
-- fiction subject routes only to fiction when required
-- juvenile subject is excluded from normal categories
-- children exclusion is applied at subject level, not row level
-- multi-category match is preserved when enabled
-- uncategorized subject is routed correctly
-- mixed-case text still matches
-- extra spaces still match
+- verify extraction succeeds
+- verify preview succeeds
+- inspect high-frequency uncategorized subjects
+- document rule coverage gaps
+- do not add new subject lists in Phase 15
+- do not introduce a second categorization mode in Phase 15
 
-### Export Tests
-- per-category file generation
-- uncategorized file generation
-- run summary generation
-- deterministic output ordering where configured
-- preview and export count reconciliation
+If significant accuracy gaps remain after validation, create a later focused branch for conservative rule tuning.
 
-### Logging Tests
-- app startup logging
-- config load logging
-- extraction completion logging
-- categorization completion logging
-- export completion logging
+---
+
+## 5. Release Confidence Checklist
+
+Before release, confirm:
+
+- automated tests all pass
+- dummy fixture benchmark passes
+- manual CSV validation passes
+- manual plain text validation passes
+- output folder must be chosen by the user
+- export succeeds to a user-selected folder
+- log folder opens correctly
+- run summary is generated correctly
 
 ---
 
 ## 6. Notes
 
-This document will become more detailed as implementation progresses.
+Phase 15 keeps Bragi in a single legacy-compatible categorization mode.
 
-In later phases, this file should include:
-- exact manual execution steps
-- expected results
-- screenshot references
-- links to regression fixtures
-- links to automated test coverage
+Any future modernization of rule behavior should happen only after Phase 15 results clearly justify it.
