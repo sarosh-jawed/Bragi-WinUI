@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Bragi.App.WinUI.ViewModels.Base;
 using Bragi.Application.Configuration;
 using Bragi.Application.Contracts;
+using Bragi.Application.Errors;
 using Bragi.Application.Workflow;
 using Microsoft.Extensions.Logging;
 
@@ -120,7 +121,7 @@ public sealed class PreviewResultsPageViewModel : ObservableObject
         {
             _logger.LogError(ex, "Failed to generate preview results.");
             RefreshFromSession();
-            StatusMessage = ex.Message;
+            StatusMessage = UserMessageHelper.ForPreview(ex);
         }
         finally
         {

@@ -1,9 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Bragi.Application.Configuration;
 using Bragi.Application.Contracts;
 using Bragi.Domain.Enums;
@@ -42,20 +36,40 @@ public sealed class InputIngestService : IInputIngestService
             if (inputOptions.PlainTextExtensions.Any(value =>
                     string.Equals(NormalizeExtension(value), extension, StringComparison.OrdinalIgnoreCase)))
             {
+                _logger.LogInformation(
+                    "Detected plain text input from extension. SourceFilePath={SourceFilePath} Extension={Extension}",
+                    sourceFilePath,
+                    extension);
+
                 return Task.FromResult(InputFileKind.PlainText);
             }
 
             if (inputOptions.CsvExtensions.Any(value =>
                     string.Equals(NormalizeExtension(value), extension, StringComparison.OrdinalIgnoreCase)))
             {
+                _logger.LogInformation(
+                    "Detected CSV input from extension. SourceFilePath={SourceFilePath} Extension={Extension}",
+                    sourceFilePath,
+                    extension);
+
                 return Task.FromResult(InputFileKind.Csv);
             }
         }
 
         if (inputOptions.TreatUnknownExtensionAsPlainText)
         {
+            _logger.LogWarning(
+                "Unknown extension treated as plain text. SourceFilePath={SourceFilePath} Extension={Extension}",
+                sourceFilePath,
+                extension);
+
             return Task.FromResult(InputFileKind.PlainText);
         }
+
+        _logger.LogWarning(
+            "Unable to detect supported input kind. SourceFilePath={SourceFilePath} Extension={Extension}",
+            sourceFilePath,
+            extension);
 
         return Task.FromResult(InputFileKind.Unknown);
     }

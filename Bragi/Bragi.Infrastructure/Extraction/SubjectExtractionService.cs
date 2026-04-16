@@ -42,6 +42,10 @@ public sealed class SubjectExtractionService : ISubjectExtractionService
         ArgumentNullException.ThrowIfNull(inputOptions);
         ArgumentNullException.ThrowIfNull(behaviorOptions);
 
+        _logger.LogInformation(
+            "Starting plain text subject extraction. SourceFilePath={SourceFilePath}",
+            sourceFilePath);
+
         var extractedSubjects = new List<ExtractedSubject>();
         var seenSubjects = new HashSet<string>(StringComparer.Ordinal);
         var totalRecordsRead = 0;
@@ -140,6 +144,11 @@ public sealed class SubjectExtractionService : ISubjectExtractionService
             throw new InvalidOperationException(
                 $"Configured CSV subject column '{csvColumns.SubjectColumnName}' was not found in the input rows.");
         }
+
+        _logger.LogInformation(
+            "Starting CSV subject extraction. SourceFilePath={SourceFilePath} SubjectColumnName={SubjectColumnName}",
+            sourceFilePath,
+            csvColumns.SubjectColumnName);
 
         var extractedSubjects = new List<ExtractedSubject>();
         var seenSubjects = new HashSet<string>(StringComparer.Ordinal);

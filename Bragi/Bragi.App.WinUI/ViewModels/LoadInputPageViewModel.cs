@@ -5,6 +5,7 @@ using Bragi.App.WinUI.ViewModels.Base;
 using Bragi.Application.Contracts;
 using Bragi.Application.Workflow;
 using Microsoft.Extensions.Logging;
+using Bragi.Application.Errors;
 
 namespace Bragi.App.WinUI.ViewModels;
 
@@ -153,7 +154,7 @@ public sealed class LoadInputPageViewModel : ObservableObject
         {
             _logger.LogError(ex, "Failed to load input file {FilePath}.", filePath);
             RefreshFromSession();
-            StatusMessage = ex.Message;
+            StatusMessage = UserMessageHelper.ForInputLoad(ex);
         }
         finally
         {

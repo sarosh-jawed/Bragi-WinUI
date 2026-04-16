@@ -335,6 +335,11 @@ public sealed class WizardSessionStore
         {
             CancelAndDisposeCurrentOperation();
 
+            if (!State.IsBusy)
+            {
+                return;
+            }
+
             State = State with
             {
                 IsBusy = false

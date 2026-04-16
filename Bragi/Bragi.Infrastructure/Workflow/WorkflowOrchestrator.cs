@@ -1,5 +1,4 @@
-using System;
-using System.IO;
+using System.Diagnostics;
 using Bragi.Application.Configuration;
 using Bragi.Application.Contracts;
 using Bragi.Application.Workflow;
@@ -41,6 +40,12 @@ public sealed class WorkflowOrchestrator : IWorkflowOrchestrator
         string sourceFilePath,
         CancellationToken cancellationToken = default)
     {
+        var stopwatch = Stopwatch.StartNew();
+
+        _logger.LogInformation(
+            "Starting extraction preview. SourceFilePath={SourceFilePath}",
+            sourceFilePath);
+
         using var linkedCancellationTokenSource = BeginBusyOperation(cancellationToken);
 
         try
@@ -51,12 +56,39 @@ public sealed class WorkflowOrchestrator : IWorkflowOrchestrator
                 normalizedSourceFilePath,
                 linkedCancellationTokenSource.Token);
 
+            stopwatch.Stop();
+
             _logger.LogInformation(
-                "Extraction preview prepared for {SourceFilePath}. Extracted subjects: {ExtractedSubjectCount}.",
+                "Completed extraction preview. SourceFilePath={SourceFilePath} ExtractedSubjectCount={ExtractedSubjectCount} TotalRecordsRead={TotalRecordsRead} DurationMs={DurationMs}",
                 normalizedSourceFilePath,
-                extractionResult.ExtractedCount);
+                extractionResult.ExtractedCount,
+                extractionResult.TotalRecordsRead,
+                stopwatch.ElapsedMilliseconds);
 
             return extractionResult;
+        }
+        catch (OperationCanceledException)
+        {
+            stopwatch.Stop();
+
+            _logger.LogWarning(
+                "Extraction preview cancelled. SourceFilePath={SourceFilePath} DurationMs={DurationMs}",
+                sourceFilePath,
+                stopwatch.ElapsedMilliseconds);
+
+            throw;
+        }
+        catch (Exception ex)
+        {
+            stopwatch.Stop();
+
+            _logger.LogError(
+                ex,
+                "Extraction preview failed. SourceFilePath={SourceFilePath} DurationMs={DurationMs}",
+                sourceFilePath,
+                stopwatch.ElapsedMilliseconds);
+
+            throw;
         }
         finally
         {
@@ -68,6 +100,12 @@ public sealed class WorkflowOrchestrator : IWorkflowOrchestrator
         string sourceFilePath,
         CancellationToken cancellationToken = default)
     {
+        var stopwatch = Stopwatch.StartNew();
+
+        _logger.LogInformation(
+            "Starting categorization preview. SourceFilePath={SourceFilePath}",
+            sourceFilePath);
+
         using var linkedCancellationTokenSource = BeginBusyOperation(cancellationToken);
 
         try
@@ -85,13 +123,40 @@ public sealed class WorkflowOrchestrator : IWorkflowOrchestrator
                 extractionResult,
                 linkedCancellationTokenSource.Token);
 
+            stopwatch.Stop();
+
             _logger.LogInformation(
-                "Categorization preview prepared for {SourceFilePath}. Categorized subjects: {CategorizedSubjectCount}. Uncategorized subjects: {UncategorizedSubjectCount}.",
+                "Completed categorization preview. SourceFilePath={SourceFilePath} CategorizedSubjectCount={CategorizedSubjectCount} UncategorizedSubjectCount={UncategorizedSubjectCount} TotalAssignments={TotalAssignments} DurationMs={DurationMs}",
                 normalizedSourceFilePath,
                 categorizationResult.CategorizedSubjectCount,
-                categorizationResult.UncategorizedSubjectCount);
+                categorizationResult.UncategorizedSubjectCount,
+                categorizationResult.TotalAssignments,
+                stopwatch.ElapsedMilliseconds);
 
             return categorizationResult;
+        }
+        catch (OperationCanceledException)
+        {
+            stopwatch.Stop();
+
+            _logger.LogWarning(
+                "Categorization preview cancelled. SourceFilePath={SourceFilePath} DurationMs={DurationMs}",
+                sourceFilePath,
+                stopwatch.ElapsedMilliseconds);
+
+            throw;
+        }
+        catch (Exception ex)
+        {
+            stopwatch.Stop();
+
+            _logger.LogError(
+                ex,
+                "Categorization preview failed. SourceFilePath={SourceFilePath} DurationMs={DurationMs}",
+                sourceFilePath,
+                stopwatch.ElapsedMilliseconds);
+
+            throw;
         }
         finally
         {
@@ -103,6 +168,13 @@ public sealed class WorkflowOrchestrator : IWorkflowOrchestrator
         string sourceFilePath,
         CancellationToken cancellationToken = default)
     {
+        var stopwatch = Stopwatch.StartNew();
+
+        _logger.LogInformation(
+            "Starting export workflow. SourceFilePath={SourceFilePath} SelectedOutputFolder={SelectedOutputFolder}",
+            sourceFilePath,
+            _wizardSessionStore.SelectedOutputFolder ?? _config.Output.RootPath);
+
         using var linkedCancellationTokenSource = BeginBusyOperation(cancellationToken);
 
         try
@@ -154,12 +226,40 @@ public sealed class WorkflowOrchestrator : IWorkflowOrchestrator
 
             _wizardSessionStore.SetRunSummary(runSummary, generatedFiles);
 
+            stopwatch.Stop();
+
             _logger.LogInformation(
-                "Workflow execution completed for {SourceFilePath}. Generated files: {GeneratedFileCount}.",
+                "Completed export workflow. SourceFilePath={SourceFilePath} GeneratedFileCount={GeneratedFileCount} CategorizedAssignmentCount={CategorizedAssignmentCount} UncategorizedSubjectCount={UncategorizedSubjectCount} DurationMs={DurationMs}",
                 normalizedSourceFilePath,
-                generatedFiles.Count);
+                generatedFiles.Count,
+                runSummary.CategorizedAssignmentCount,
+                runSummary.UncategorizedSubjectCount,
+                stopwatch.ElapsedMilliseconds);
 
             return runSummary;
+        }
+        catch (OperationCanceledException)
+        {
+            stopwatch.Stop();
+
+            _logger.LogWarning(
+                "Export workflow cancelled. SourceFilePath={SourceFilePath} DurationMs={DurationMs}",
+                sourceFilePath,
+                stopwatch.ElapsedMilliseconds);
+
+            throw;
+        }
+        catch (Exception ex)
+        {
+            stopwatch.Stop();
+
+            _logger.LogError(
+                ex,
+                "Export workflow failed. SourceFilePath={SourceFilePath} DurationMs={DurationMs}",
+                sourceFilePath,
+                stopwatch.ElapsedMilliseconds);
+
+            throw;
         }
         finally
         {
@@ -174,13 +274,27 @@ public sealed class WorkflowOrchestrator : IWorkflowOrchestrator
         if (_wizardSessionStore.ExtractedSubjects is not null &&
             PathsMatch(_wizardSessionStore.ExtractedSubjects.SourceFile, sourceFilePath))
         {
+            _logger.LogInformation(
+                "Reusing cached extraction result. SourceFilePath={SourceFilePath} ExtractedSubjectCount={ExtractedSubjectCount}",
+                sourceFilePath,
+                _wizardSessionStore.ExtractedSubjects.ExtractedCount);
+
             return _wizardSessionStore.ExtractedSubjects;
         }
+
+        _logger.LogInformation(
+            "Starting extraction stage. SourceFilePath={SourceFilePath}",
+            sourceFilePath);
 
         var inputFileKind = await _inputIngestService.DetectInputFileKindAsync(
             sourceFilePath,
             _config.InputOptions,
             cancellationToken);
+
+        _logger.LogInformation(
+            "Detected input kind. SourceFilePath={SourceFilePath} InputFileKind={InputFileKind}",
+            sourceFilePath,
+            inputFileKind);
 
         if (inputFileKind == InputFileKind.Unknown)
         {
@@ -221,6 +335,15 @@ public sealed class WorkflowOrchestrator : IWorkflowOrchestrator
 
         _wizardSessionStore.SetExtractionResult(extractionResult);
 
+        _logger.LogInformation(
+            "Completed extraction stage. SourceFilePath={SourceFilePath} InputFileKind={InputFileKind} ExtractedSubjectCount={ExtractedSubjectCount} BlankOrIgnoredCount={BlankOrIgnoredCount} DuplicateCount={DuplicateCount} ParseWarningCount={ParseWarningCount}",
+            sourceFilePath,
+            extractionResult.InputFileKind,
+            extractionResult.ExtractedCount,
+            extractionResult.BlankOrIgnoredCount,
+            extractionResult.DuplicateCount,
+            extractionResult.ParseWarningCount);
+
         return extractionResult;
     }
 
@@ -232,8 +355,18 @@ public sealed class WorkflowOrchestrator : IWorkflowOrchestrator
         if (_wizardSessionStore.LastCategorizationResult is not null &&
             PathsMatch(extractionResult.SourceFile, sourceFilePath))
         {
+            _logger.LogInformation(
+                "Reusing cached categorization result. SourceFilePath={SourceFilePath} TotalAssignments={TotalAssignments}",
+                sourceFilePath,
+                _wizardSessionStore.LastCategorizationResult.TotalAssignments);
+
             return _wizardSessionStore.LastCategorizationResult;
         }
+
+        _logger.LogInformation(
+            "Starting categorization stage. SourceFilePath={SourceFilePath} CategoryRuleCount={CategoryRuleCount}",
+            sourceFilePath,
+            _config.CategoryRules.Count(rule => rule.Enabled));
 
         var categorizationResult = await _categorizationService.CategorizeAsync(
             extractionResult,
@@ -242,6 +375,13 @@ public sealed class WorkflowOrchestrator : IWorkflowOrchestrator
             cancellationToken);
 
         _wizardSessionStore.SetCategorizationResult(categorizationResult);
+
+        _logger.LogInformation(
+            "Completed categorization stage. SourceFilePath={SourceFilePath} CategorizedSubjectCount={CategorizedSubjectCount} UncategorizedSubjectCount={UncategorizedSubjectCount} TotalAssignments={TotalAssignments}",
+            sourceFilePath,
+            categorizationResult.CategorizedSubjectCount,
+            categorizationResult.UncategorizedSubjectCount,
+            categorizationResult.TotalAssignments);
 
         return categorizationResult;
     }

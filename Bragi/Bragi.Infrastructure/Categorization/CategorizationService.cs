@@ -48,6 +48,12 @@ public sealed class CategorizationService : ICategorizationService
             .ThenBy(rule => rule.Key, StringComparer.OrdinalIgnoreCase)
             .ToArray();
 
+        _logger.LogInformation(
+            "Starting subject categorization. ExtractedSubjectCount={ExtractedSubjectCount} EnabledCategoryRuleCount={EnabledCategoryRuleCount} AllowMultiMatch={AllowMultiMatch}",
+            extractionResult.ExtractedCount,
+            orderedRules.Length,
+            behaviorOptions.AllowMultiMatch);
+
         var categorizedSubjects = new List<CategorizedSubject>();
         var uncategorizedSubjects = new List<UncategorizedSubject>();
         var categoryCounts = new Dictionary<CategoryKey, int>();
