@@ -44,16 +44,17 @@ public sealed class TextExportService : ITextExportService
         var outputDirectory = GetOutputDirectory(outputOptions, runSummary);
         Directory.CreateDirectory(outputDirectory);
 
-        _logger.LogInformation(
-            "Exporting Bragi outputs to {OutputDirectory}.",
-            outputDirectory);
-
         var orderedRules = categoryRules
             .Where(rule => rule.Enabled)
             .OrderBy(rule => rule.SortOrder)
             .ThenBy(rule => rule.DisplayName, StringComparer.OrdinalIgnoreCase)
             .ThenBy(rule => rule.Key, StringComparer.OrdinalIgnoreCase)
             .ToArray();
+
+        _logger.LogInformation(
+            "Starting export stage. OutputDirectory={OutputDirectory} CategoryRuleCount={CategoryRuleCount}",
+            outputDirectory,
+            orderedRules.Length);
 
         foreach (var categoryRule in orderedRules)
         {
@@ -105,6 +106,12 @@ public sealed class TextExportService : ITextExportService
         _logger.LogInformation(
             "Wrote run summary file {RunSummaryFilePath}.",
             runSummaryFilePath);
+
+        _logger.LogInformation(
+            "Completed export stage. OutputDirectory={OutputDirectory} GeneratedCategoryFileCount={GeneratedCategoryFileCount} UncategorizedLineCount={UncategorizedLineCount}",
+            outputDirectory,
+            orderedRules.Length,
+            uncategorizedLines.Count);
     }
 
     private static string GetOutputDirectory(

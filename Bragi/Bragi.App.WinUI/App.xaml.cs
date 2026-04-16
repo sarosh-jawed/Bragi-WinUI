@@ -63,8 +63,10 @@ public partial class App : Microsoft.UI.Xaml.Application
             var config = await configProvider.LoadAsync();
 
             _logger.LogInformation(
-                "Startup configuration loaded and validated successfully. Category rules loaded: {CategoryRuleCount}.",
-                config.CategoryRules.Count);
+                "Startup configuration loaded successfully. CategoryRuleCount={CategoryRuleCount} PackagedConfigPath={PackagedConfigPath} LocalConfigPath={LocalConfigPath}",
+                config.CategoryRules.Count,
+                GetPackagedConfigPath(),
+                GetLocalConfigPath());
 
             _mainWindow = AppHost.Services.GetRequiredService<MainWindow>();
             _mainWindow.Closed += OnMainWindowClosed;
@@ -91,10 +93,11 @@ public partial class App : Microsoft.UI.Xaml.Application
                 config.AddJsonFile(packagedConfigPath, optional: false, reloadOnChange: false);
                 config.AddJsonFile(localConfigPath, optional: true, reloadOnChange: false);
             })
+            // Create the log root eagerly so support logs are available even for early startup failures.
             .UseSerilog((context, services, loggerConfiguration) =>
             {
                 var pathTokenResolver = new PathTokenResolver();
-                var logsRoot = pathTokenResolver.Resolve("%LOCALAPPDATA%\\Bragi\\Logs");
+                var logsRoot = pathTokenResolver.Resolve("%DOCUMENTS%\\Bragi\\Logs");
 
                 Directory.CreateDirectory(logsRoot);
 
@@ -137,8 +140,7 @@ public partial class App : Microsoft.UI.Xaml.Application
                 {
                     var pathTokenResolver = sp.GetRequiredService<PathTokenResolver>();
                     var config = sp.GetRequiredService<BragiConfig>();
-                    var logsRoot = pathTokenResolver.Resolve("%LOCALAPPDATA%\\Bragi\\Logs");
-
+                    var logsRoot = pathTokenResolver.Resolve("%DOCUMENTS%\\Bragi\\Logs");
                     return new BragiStartupContext(
                         packagedConfigPath,
                         localConfigPath,

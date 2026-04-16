@@ -11,6 +11,7 @@ using Bragi.Application.Contracts;
 using Bragi.Application.Workflow;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml;
+using Bragi.Application.Errors;
 
 namespace Bragi.App.WinUI.ViewModels;
 
@@ -133,7 +134,7 @@ public sealed class ExportFinishPageViewModel : ObservableObject
         {
             _logger.LogError(ex, "Export operation failed.");
             RefreshFromSession();
-            StatusMessage = ex.Message;
+            StatusMessage = UserMessageHelper.ForExport(ex);
         }
         finally
         {
@@ -211,15 +212,15 @@ public sealed class ExportFinishPageViewModel : ObservableObject
 
             Process.Start(new ProcessStartInfo
             {
-                FileName = "explorer.exe",
-                Arguments = $"\"{folderPath}\"",
-                UseShellExecute = true
+                FileName = folderPath,
+                UseShellExecute = true,
+                Verb = "open"
             });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to open folder {FolderPath}.", folderPath);
-            StatusMessage = ex.Message;
+            StatusMessage = UserMessageHelper.ForFolderOpen(ex);
         }
     }
 
