@@ -13,6 +13,7 @@ This project follows a simple, human-readable changelog style inspired by Keep a
 - required the user to choose an output folder before export instead of relying on a default UI output path
 - added Phase 15 automated validation coverage and manual validation documentation
 - conservatively tuned legacy category keywords to improve coverage for the original library CSV without adding new categories or introducing a second categorization mode
+- reduced preview and review UI refresh cost for large files by reusing already-bound results and limiting heavy preview materialization
 
 ### Added
 - Phase 1 repository baseline and project standards

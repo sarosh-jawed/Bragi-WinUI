@@ -3,6 +3,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using Bragi.App.WinUI.ViewModels.Base;
 using Bragi.Application.Workflow;
+using Bragi.Domain.Results;
 using Microsoft.Extensions.Logging;
 
 namespace Bragi.App.WinUI.ViewModels;
@@ -14,6 +15,7 @@ public sealed class ReviewSubjectsPageViewModel : ObservableObject
     private readonly WizardSessionStore _wizardSessionStore;
     private readonly ILogger<ReviewSubjectsPageViewModel> _logger;
 
+    private ExtractionResult? _lastBoundExtractionResult;
     private string _statusMessage = "Load input first to review extracted subjects.";
     private int _extractedSubjectCount;
     private int _duplicateCount;
@@ -76,7 +78,7 @@ public sealed class ReviewSubjectsPageViewModel : ObservableObject
 
     public string PreviewWindowText =>
         HasExtraction
-            ? $"Showing the first {Subjects.Count} extracted subjects."
+            ? $"Showing the first {Subjects.Count} of {ExtractedSubjectCount} extracted subjects."
             : "No extracted subjects are currently available.";
 
     public void MarkReviewComplete()
@@ -96,8 +98,6 @@ public sealed class ReviewSubjectsPageViewModel : ObservableObject
 
     public void RefreshFromSession()
     {
-        Subjects.Clear();
-
         var extractionResult = _wizardSessionStore.ExtractedSubjects;
 
         ExtractedSubjectCount = extractionResult?.ExtractedCount ?? 0;
@@ -106,8 +106,29 @@ public sealed class ReviewSubjectsPageViewModel : ObservableObject
         ParseWarningCount = extractionResult?.ParseWarningCount ?? 0;
         IsReviewComplete = _wizardSessionStore.State.IsExtractionReviewComplete;
 
-        if (extractionResult is not null)
+        if (extractionResult is null)
         {
+            if (Subjects.Count > 0)
+            {
+                Subjects.Clear();
+            }
+
+            _lastBoundExtractionResult = null;
+            StatusMessage = "Load input first to review extracted subjects.";
+
+            OnPropertyChanged(nameof(HasExtraction));
+            OnPropertyChanged(nameof(PreviewWindowText));
+            return;
+        }
+
+        // Only rebuild the visible review list when the extraction result actually changes.
+        // This keeps step navigation responsive for large files because the page no longer
+        // recreates the first 100 preview items on every session change.
+        if (!ReferenceEquals(_lastBoundExtractionResult, extractionResult) ||
+            (Subjects.Count == 0 && extractionResult.ExtractedCount > 0))
+        {
+            Subjects.Clear();
+
             foreach (var subject in extractionResult.Subjects.Take(PreviewLimit))
             {
                 Subjects.Add(new ReviewSubjectItem(
@@ -118,11 +139,12 @@ public sealed class ReviewSubjectsPageViewModel : ObservableObject
                     subject.Entry.SourceRecordId));
             }
 
-            if (!IsReviewComplete)
-            {
-                StatusMessage = "Review the extracted subjects, then mark the review complete.";
-            }
+            _lastBoundExtractionResult = extractionResult;
         }
+
+        StatusMessage = IsReviewComplete
+            ? "Subject review marked complete. Continue to Preview Results."
+            : "Review the extracted subjects, then mark the review complete.";
 
         OnPropertyChanged(nameof(HasExtraction));
         OnPropertyChanged(nameof(PreviewWindowText));

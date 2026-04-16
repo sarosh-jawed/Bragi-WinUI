@@ -112,6 +112,10 @@
                         Text="Category preview"
                         Style="{StaticResource PageSubsectionTitleTextBlockStyle}" />
 
+          <TextBlock
+                        Text="{x:Bind ViewModel.CategoryPreviewWindowText, Mode=OneWay}"
+                        Style="{StaticResource PageMutedTextBlockStyle}" />
+
           <ScrollViewer MaxHeight="360" VerticalScrollBarVisibility="Auto">
             <ItemsControl ItemsSource="{x:Bind ViewModel.CategoryGroups, Mode=OneWay}">
               <ItemsControl.ItemTemplate>
@@ -119,6 +123,7 @@
                   <Expander Header="{Binding DisplayName}" Margin="0,0,0,10">
                     <StackPanel Spacing="10" Padding="8">
                       <TextBlock Text="{Binding Count}" Style="{StaticResource MetricAccentValueTextBlockStyle}" />
+                      <TextBlock Text="{Binding PreviewSummary}" Style="{StaticResource PageMutedTextBlockStyle}" />
                       <ItemsControl ItemsSource="{Binding Subjects}">
                         <ItemsControl.ItemTemplate>
                           <DataTemplate>
@@ -146,6 +151,10 @@
           <TextBlock
                         Text="Uncategorized preview"
                         Style="{StaticResource PageSubsectionTitleTextBlockStyle}" />
+
+          <TextBlock
+                        Text="{x:Bind ViewModel.UncategorizedPreviewWindowText, Mode=OneWay}"
+                        Style="{StaticResource PageMutedTextBlockStyle}" />
 
           <ScrollViewer MaxHeight="320" VerticalScrollBarVisibility="Auto">
             <ItemsControl ItemsSource="{x:Bind ViewModel.UncategorizedSubjects, Mode=OneWay}">

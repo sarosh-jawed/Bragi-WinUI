@@ -8,19 +8,26 @@ using Bragi.Application.Configuration;
 using Bragi.Application.Contracts;
 using Bragi.Application.Errors;
 using Bragi.Application.Workflow;
+using Bragi.Domain.Results;
 using Microsoft.Extensions.Logging;
 
 namespace Bragi.App.WinUI.ViewModels;
 
 public sealed class PreviewResultsPageViewModel : ObservableObject
 {
+    private const int CategorySubjectPreviewLimit = 25;
+    private const int UncategorizedPreviewLimit = 100;
+
     private readonly IWorkflowOrchestrator _workflowOrchestrator;
     private readonly WizardSessionStore _wizardSessionStore;
     private readonly BragiConfig _config;
     private readonly ILogger<PreviewResultsPageViewModel> _logger;
 
+    private CategorizationResult? _lastBoundCategorizationResult;
     private bool _isLoadingPreview;
     private string _statusMessage = "Complete subject review before generating the categorization preview.";
+    private string _categoryPreviewWindowText = "No category preview is currently available.";
+    private string _uncategorizedPreviewWindowText = "No uncategorized preview is currently available.";
     private int _uncategorizedCount;
     private int _totalAssignments;
 
@@ -53,6 +60,18 @@ public sealed class PreviewResultsPageViewModel : ObservableObject
     {
         get => _statusMessage;
         private set => SetProperty(ref _statusMessage, value);
+    }
+
+    public string CategoryPreviewWindowText
+    {
+        get => _categoryPreviewWindowText;
+        private set => SetProperty(ref _categoryPreviewWindowText, value);
+    }
+
+    public string UncategorizedPreviewWindowText
+    {
+        get => _uncategorizedPreviewWindowText;
+        private set => SetProperty(ref _uncategorizedPreviewWindowText, value);
     }
 
     public int UncategorizedCount
@@ -132,10 +151,6 @@ public sealed class PreviewResultsPageViewModel : ObservableObject
 
     public void RefreshFromSession()
     {
-        CategoryCounts.Clear();
-        CategoryGroups.Clear();
-        UncategorizedSubjects.Clear();
-
         var categorizationResult = _wizardSessionStore.LastCategorizationResult;
 
         UncategorizedCount = categorizationResult?.UncategorizedSubjectCount ?? 0;
@@ -152,6 +167,11 @@ public sealed class PreviewResultsPageViewModel : ObservableObject
 
         if (categorizationResult is null)
         {
+            ClearPreviewCollections();
+            _lastBoundCategorizationResult = null;
+            CategoryPreviewWindowText = "No category preview is currently available.";
+            UncategorizedPreviewWindowText = "No uncategorized preview is currently available.";
+
             OnPropertyChanged(nameof(HasPreview));
             OnPropertyChanged(nameof(CanGeneratePreview));
             return;
@@ -163,6 +183,31 @@ public sealed class PreviewResultsPageViewModel : ObservableObject
                 rule => string.IsNullOrWhiteSpace(rule.DisplayName) ? rule.Key : rule.DisplayName,
                 StringComparer.OrdinalIgnoreCase);
 
+        // The processing layer already caches categorization results.
+        // The performance problem with large files is mostly UI-side: this view model
+        // used to rebuild every category group and every uncategorized item on every
+        // session change. Rebuild only when the actual categorization result changes.
+        if (!ReferenceEquals(_lastBoundCategorizationResult, categorizationResult) ||
+            CategoryCounts.Count == 0)
+        {
+            RebuildCategoryCounts(displayNameLookup, categorizationResult);
+            RebuildCategoryGroups(displayNameLookup, categorizationResult);
+            RebuildUncategorizedSubjects(categorizationResult);
+
+            _lastBoundCategorizationResult = categorizationResult;
+        }
+
+        StatusMessage = "Preview results are ready.";
+        OnPropertyChanged(nameof(HasPreview));
+        OnPropertyChanged(nameof(CanGeneratePreview));
+    }
+
+    private void RebuildCategoryCounts(
+        IReadOnlyDictionary<string, string> displayNameLookup,
+        CategorizationResult categorizationResult)
+    {
+        CategoryCounts.Clear();
+
         foreach (var categoryCount in categorizationResult.CategoryCounts
                      .OrderBy(pair => GetSortOrder(pair.Key.Value))
                      .ThenBy(pair => GetDisplayName(displayNameLookup, pair.Key.Value), StringComparer.OrdinalIgnoreCase))
@@ -172,6 +217,13 @@ public sealed class PreviewResultsPageViewModel : ObservableObject
                 categoryCount.Key.Value,
                 categoryCount.Value));
         }
+    }
+
+    private void RebuildCategoryGroups(
+        IReadOnlyDictionary<string, string> displayNameLookup,
+        CategorizationResult categorizationResult)
+    {
+        CategoryGroups.Clear();
 
         var groupedAssignments = categorizationResult.CategorizedSubjects
             .SelectMany(subject => subject.Matches.Select(match => new
@@ -188,21 +240,40 @@ public sealed class PreviewResultsPageViewModel : ObservableObject
 
         foreach (var group in groupedAssignments)
         {
-            var items = new ObservableCollection<CategorySubjectItem>(
-                group.Select(item => new CategorySubjectItem(
+            var orderedItems = group
+                .OrderBy(item => item.SourceRowNumber ?? int.MaxValue)
+                .ThenBy(item => item.SubjectText, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            var previewItems = orderedItems
+                .Take(CategorySubjectPreviewLimit)
+                .Select(item => new CategorySubjectItem(
                     item.SubjectText,
                     item.Reason,
-                    item.SourceRowNumber.HasValue ? $"Row {item.SourceRowNumber.Value}" : "No row metadata")));
+                    item.SourceRowNumber.HasValue ? $"Row {item.SourceRowNumber.Value}" : "No row metadata"));
 
             CategoryGroups.Add(new CategoryGroupItem(
                 GetDisplayName(displayNameLookup, group.Key),
                 group.Key,
-                items.Count,
-                items));
+                orderedItems.Count,
+                BuildCategoryGroupPreviewSummary(orderedItems.Count),
+                new ObservableCollection<CategorySubjectItem>(previewItems)));
         }
 
-        foreach (var uncategorizedSubject in categorizationResult.UncategorizedSubjects
-                     .OrderBy(item => item.Subject.SequenceNumber))
+        CategoryPreviewWindowText = CategoryGroups.Count == 0
+            ? "No category preview is currently available."
+            : $"Showing up to {CategorySubjectPreviewLimit} subjects per category group.";
+    }
+
+    private void RebuildUncategorizedSubjects(CategorizationResult categorizationResult)
+    {
+        UncategorizedSubjects.Clear();
+
+        var orderedUncategorized = categorizationResult.UncategorizedSubjects
+            .OrderBy(item => item.Subject.SequenceNumber)
+            .ToList();
+
+        foreach (var uncategorizedSubject in orderedUncategorized.Take(UncategorizedPreviewLimit))
         {
             UncategorizedSubjects.Add(new UncategorizedItem(
                 uncategorizedSubject.Subject.OriginalSubject.Value,
@@ -212,9 +283,26 @@ public sealed class PreviewResultsPageViewModel : ObservableObject
                     : "No row metadata"));
         }
 
-        StatusMessage = "Preview results are ready.";
-        OnPropertyChanged(nameof(HasPreview));
-        OnPropertyChanged(nameof(CanGeneratePreview));
+        UncategorizedPreviewWindowText = orderedUncategorized.Count switch
+        {
+            0 => "No uncategorized subjects in this preview.",
+            <= UncategorizedPreviewLimit => $"Showing all {orderedUncategorized.Count} uncategorized subjects.",
+            _ => $"Showing first {UncategorizedPreviewLimit} of {orderedUncategorized.Count} uncategorized subjects."
+        };
+    }
+
+    private void ClearPreviewCollections()
+    {
+        CategoryCounts.Clear();
+        CategoryGroups.Clear();
+        UncategorizedSubjects.Clear();
+    }
+
+    private static string BuildCategoryGroupPreviewSummary(int totalItemCount)
+    {
+        return totalItemCount <= CategorySubjectPreviewLimit
+            ? $"Showing all {totalItemCount} subjects in this category preview."
+            : $"Showing first {CategorySubjectPreviewLimit} of {totalItemCount} subjects in this category preview.";
     }
 
     private int GetSortOrder(string categoryKey)
@@ -248,6 +336,7 @@ public sealed class PreviewResultsPageViewModel : ObservableObject
         string DisplayName,
         string CategoryKey,
         int Count,
+        string PreviewSummary,
         ObservableCollection<CategorySubjectItem> Subjects);
 
     public sealed record CategorySubjectItem(
