@@ -12,6 +12,7 @@ This project follows a simple, human-readable changelog style inspired by Keep a
 - expanded `config.json` to include the full legacy Bragi subject category rule set in preparation for Phase 15 validation
 - required the user to choose an output folder before export instead of relying on a default UI output path
 - added Phase 15 automated validation coverage and manual validation documentation
+- conservatively tuned legacy category keywords to improve coverage for the original library CSV without adding new categories or introducing a second categorization mode
 
 ### Added
 - Phase 1 repository baseline and project standards
