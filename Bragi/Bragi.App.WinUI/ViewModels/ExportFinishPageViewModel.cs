@@ -68,7 +68,8 @@ public sealed class ExportFinishPageViewModel : ObservableObject
     public bool CanGenerateOutput =>
         !_wizardSessionStore.State.IsBusy &&
         _wizardSessionStore.LastCategorizationResult is not null &&
-        !string.IsNullOrWhiteSpace(_wizardSessionStore.SelectedInputFile);
+        !string.IsNullOrWhiteSpace(_wizardSessionStore.SelectedInputFile) &&
+        !string.IsNullOrWhiteSpace(SelectedOutputFolder);
 
     public bool HasGeneratedFiles => GeneratedFiles.Count > 0;
 
@@ -107,6 +108,12 @@ public sealed class ExportFinishPageViewModel : ObservableObject
         if (_wizardSessionStore.LastCategorizationResult is null)
         {
             StatusMessage = "Generate preview results before exporting.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(SelectedOutputFolder))
+        {
+            StatusMessage = "Choose an output folder before generating files.";
             return;
         }
 
@@ -161,7 +168,7 @@ public sealed class ExportFinishPageViewModel : ObservableObject
     {
         SelectedOutputFolder =
             _wizardSessionStore.SelectedOutputFolder
-            ?? _startupContext.OutputRoot;
+            ?? string.Empty;
 
         GeneratedFiles.Clear();
 

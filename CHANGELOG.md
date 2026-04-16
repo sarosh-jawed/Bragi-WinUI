@@ -10,6 +10,8 @@ This project follows a simple, human-readable changelog style inspired by Keep a
 - improved cancellation handling for long-running workflow operations
 - replaced raw exception text in the UI with friendly user-facing messages
 - expanded `config.json` to include the full legacy Bragi subject category rule set in preparation for Phase 15 validation
+- required the user to choose an output folder before export instead of relying on a default UI output path
+- added Phase 15 automated validation coverage and manual validation documentation
 
 ### Added
 - Phase 1 repository baseline and project standards

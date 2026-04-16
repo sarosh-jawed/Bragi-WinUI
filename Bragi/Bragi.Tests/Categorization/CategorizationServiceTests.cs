@@ -92,6 +92,73 @@ public sealed class CategorizationServiceTests
     }
 
     [Fact]
+    public async Task CategorizeAsync_RoutesFictionOnlyToFiction_WhenNormalCategoryDisablesFiction()
+    {
+        var service = CreateService();
+
+        var extractionResult = CreateExtractionResult(
+            CreateExtractedSubject(1, "Art fiction", 2));
+
+        var categoryRules = new[]
+        {
+        CreateRule(
+            "art",
+            "ArtSubjects.txt",
+            includeKeywords: [ "art" ],
+            sortOrder: 10,
+            disableForFiction: true),
+        CreateRule(
+            "fiction",
+            "FictionSubjects.txt",
+            includeKeywords: [ "fiction" ],
+            sortOrder: 20)
+    };
+
+        var result = await service.CategorizeAsync(
+            extractionResult,
+            categoryRules,
+            new BehaviorOptions { AllowMultiMatch = true });
+
+        Assert.Equal(1, result.CategorizedSubjectCount);
+        Assert.Equal(0, result.UncategorizedSubjectCount);
+        Assert.Equal(1, result.TotalAssignments);
+
+        var categorizedSubject = result.CategorizedSubjects.Single();
+        Assert.Single(categorizedSubject.Matches);
+        Assert.Equal("fiction", categorizedSubject.Matches[0].CategoryKey.Value);
+    }
+
+    [Fact]
+    public async Task CategorizeAsync_MatchesArt_WithMixedCase_AndExtraSpaces()
+    {
+        var service = CreateService();
+
+        var extractionResult = CreateExtractionResult(
+            CreateExtractedSubject(1, "   ArT   ", 2));
+
+        var categoryRules = new[]
+        {
+        CreateRule("art", "ArtSubjects.txt", includeKeywords: [ "art" ])
+    };
+
+        var result = await service.CategorizeAsync(
+            extractionResult,
+            categoryRules,
+            new BehaviorOptions
+            {
+                AllowMultiMatch = true,
+                CaseInsensitiveMatching = true,
+                NormalizeWhitespace = true,
+                TrimSubjects = true
+            });
+
+        Assert.Equal(1, result.CategorizedSubjectCount);
+        Assert.Equal(0, result.UncategorizedSubjectCount);
+        Assert.Equal(1, result.TotalAssignments);
+        Assert.Equal("art", result.CategorizedSubjects[0].Matches[0].CategoryKey.Value);
+    }
+
+    [Fact]
     public async Task CategorizeAsync_RespectsJuvenileExclusion()
     {
         var service = CreateService();
