@@ -1,109 +1,150 @@
 # Bragi Test Cases
 
-This document tracks the manual and automated validation approach for Bragi.
-
-At Phase 1, the application has not been implemented yet, so this document establishes the baseline testing strategy and the future regression targets that later phases must satisfy.
+This document tracks the current validation strategy for Bragi and separates what is already implemented from what is intentionally deferred.
 
 ---
 
-## 1. Testing Goals
+## 1. Current Validation Scope
 
-Bragi must be validated across:
+Bragi currently needs validation across:
+
 - file loading
 - input type detection
 - CSV parsing
 - subject extraction
 - whitespace normalization
 - blank handling
+- duplicate counting
 - categorization
 - exclusion rules
 - multi-match behavior
 - uncategorized handling
 - export generation
 - run summary generation
-- logging
+- workflow/session state
+- navigation state consistency
+- logging visibility
 
 ---
 
-## 2. Phase 1 Baseline Checks
+## 2. Current Automated Test Coverage
 
-These checks confirm the repository baseline is professional before coding begins.
+The repository already includes automated tests in these areas:
 
-### Repository Baseline
-- `README.md` exists and describes the tool clearly
-- `CHANGELOG.md` exists
-- `LICENSE` exists
-- `.editorconfig` exists
-- `.gitignore` exists
-- `docs/CONVENTIONS.md` exists
-- `docs/TEST-CASES.md` exists
-- `docs/SCREENSHOTS.md` exists
+### Extraction
+- `Bragi.Tests/Extraction/SubjectExtractionServiceTests.cs`
 
-### Branching Baseline
-- `main` remains stable
-- phase work is done on a dedicated feature branch
-- local working tree is clean before push
-
----
-
-## 3. Planned Functional Test Areas
-
-These are the minimum functional areas to validate once implementation begins.
-
-### Plain Text Input
-- one subject per line is loaded correctly
-- blank lines are handled safely
-- extra surrounding whitespace is normalized as configured
-
-### CSV Input
-- CSV file is recognized correctly
-- configured subject column is selected correctly
-- JSON-like subject arrays stored as text are extracted safely
-- malformed or empty rows are counted and logged safely
+Current automated coverage includes:
+- plain text extraction
+- blank line handling
+- duplicate counting
+- CSV extraction from configured columns
+- JSON-array CSV cell extraction
+- source row and metadata preservation
 
 ### Categorization
-- matching is case-insensitive when configured
-- configured exclusions are respected
-- fiction exclusions work correctly
-- juvenile and children exclusions work correctly
-- one subject may match multiple categories when enabled
-- unmatched items route to uncategorized output
+- `Bragi.Tests/Categorization/CategorizationServiceTests.cs`
+
+Current automated coverage includes:
+- case, punctuation, and whitespace normalization
+- multi-match behavior
+- deterministic single-match behavior when multi-match is disabled
+- fiction exclusion
+- juvenile exclusion
+- uncategorized routing
+- blank-after-normalization handling
 
 ### Export
-- every configured category file is generated
-- uncategorized file is generated
-- run summary file is generated
-- preview counts match export counts
-- summary counts match preview counts
+- `Bragi.Tests/Export/TextExportServiceTests.cs`
 
-### Logging
-- pipeline stages are visible in logs
-- warnings are meaningful
-- support diagnostics are possible without exposing raw technical detail in the UI
+Current automated coverage includes:
+- category file generation
+- uncategorized file generation
+- run summary file generation
+- deterministic export behavior
+
+### Workflow
+- `Bragi.Tests/Workflow/StepNavigationServiceTests.cs`
+- `Bragi.Tests/Workflow/WizardSessionStoreTests.cs`
+- `Bragi.Tests/Workflow/WorkflowOrchestratorTests.cs`
+- `Bragi.Tests/Workflow/WizardStateTests.cs`
+
+Current automated coverage includes:
+- linear step navigation
+- step-lock behavior
+- session persistence across navigation
+- preview/export clearing when upstream state changes
+- busy-operation cancellation handling
+- initial wizard-state consistency
 
 ---
 
-## 4. Primary Regression Fixture
+## 3. Current Manual Smoke Checks
 
-Primary planned regression fixture:
+These checks should be run after meaningful UI or workflow changes.
+
+### Shell startup
+- app launches successfully from `Bragi.App.WinUI`
+- shell opens to the Start page
+- 5-step navigation is visible
+- later steps remain locked until the workflow advances
+
+### Load Input
+- `.txt` file can be selected
+- `.csv` file can be selected
+- detected input kind updates correctly
+- extraction metrics refresh after loading
+
+### Review Subjects
+- extracted subject preview appears
+- duplicate count appears
+- blank or ignored count appears
+- parse warning count appears
+- review completion unlocks Preview Results
+
+### Preview Results
+- preview generation succeeds after review completion
+- category counts appear
+- category grouping appears
+- uncategorized list appears when applicable
+- routing reasons appear in preview items
+
+### Export & Finish
+- output folder can be selected
+- export completes successfully
+- generated file list appears
+- output folder can be opened
+- log folder can be opened
+- run summary text appears in the page
+
+---
+
+## 4. Intentionally Deferred Work
+
+The following work is intentionally not part of this pre-Phase-14 cleanup branch:
+
+### Full legacy category-rule completion
+The packaged `config.json` currently contains only a starter set of category rules.
+
+That means the app is not yet ready for full legacy-compatible count validation against the complete Bragi dummy CSV regression benchmark.
+
+### Full dummy CSV regression fixture integration
+Primary target fixture:
+
 - `bragi_dummy_lcc_instance_items.csv`
 
-Planned long-term location:
+Planned long-term repository location:
+
 - `Bragi.Tests/Fixtures/bragi_dummy_lcc_instance_items.csv`
 
-This fixture is intended to validate the complete Bragi pipeline:
-- CSV loading
-- subject extraction
-- normalization
-- categorization
-- exclusions
-- multi-match behavior
-- uncategorized handling
-- export generation
-- run summary generation
-- logging
+This fixture should be finalized only when the category rules are expanded to the intended legacy-compatible set.
 
-### Expected benchmark totals for the dummy CSV
+---
+
+## 5. Planned Full Regression Targets After Rule Completion
+
+Once the category rules are completed, Bragi should be validated against the main dummy CSV benchmark for:
+
 - total CSV rows = 30
 - rows with non-empty subject arrays = 29
 - rows with empty subjects = 1
@@ -112,54 +153,25 @@ This fixture is intended to validate the complete Bragi pipeline:
 - categorized assignments = 77
 - multi-match subjects = 3
 
-These values become a regression checkpoint once the implementation exists.
+That future regression pass should validate:
 
----
-
-## 5. Must-Have Future Test Cases
-
-The following tests must exist in later phases.
-
-### Extraction Tests
-- plain text extraction
-- CSV extraction from configured column
-- empty subject row handling
-- whitespace normalization
-- duplicate subject counting
-
-### Categorization Tests
-- art subject matches art
-- fiction subject routes only to fiction when required
-- juvenile subject is excluded from normal categories
-- children exclusion is applied at subject level, not row level
-- multi-category match is preserved when enabled
-- uncategorized subject is routed correctly
-- mixed-case text still matches
-- extra spaces still match
-
-### Export Tests
-- per-category file generation
-- uncategorized file generation
-- run summary generation
-- deterministic output ordering where configured
-- preview and export count reconciliation
-
-### Logging Tests
-- app startup logging
-- config load logging
-- extraction completion logging
-- categorization completion logging
-- export completion logging
+- extraction counts
+- preview counts
+- export line counts
+- run summary counts
+- logging visibility
+- category-by-category expected totals
 
 ---
 
 ## 6. Notes
 
-This document will become more detailed as implementation progresses.
+This file now reflects the current implemented codebase rather than the earlier planning-only state.
 
-In later phases, this file should include:
-- exact manual execution steps
-- expected results
+It should be expanded later with:
+
+- exact manual execution steps for the dummy CSV regression fixture
 - screenshot references
-- links to regression fixtures
-- links to automated test coverage
+- expected file outputs by category
+- category-by-category benchmark counts
+- release-readiness validation cases

@@ -26,7 +26,7 @@ public sealed record WizardState
         return LockedStepIndices.Contains(stepIndex);
     }
 
-    public static WizardState CreateInitial(int totalStepCount = 4)
+    public static WizardState CreateInitial(int totalStepCount = 5)
     {
         if (totalStepCount < 1)
         {
@@ -37,7 +37,9 @@ public sealed record WizardState
         {
             TotalStepCount = totalStepCount,
             CurrentStepIndex = 0,
-            LockedStepIndices = Enumerable.Range(1, Math.Max(0, totalStepCount - 1)).ToArray(),
+            LockedStepIndices = totalStepCount <= 2
+                ? Array.Empty<int>()
+                : Enumerable.Range(2, totalStepCount - 2).ToArray(),
             IsInputLoaded = false,
             IsExtractionReviewComplete = false,
             HasPreview = false,
