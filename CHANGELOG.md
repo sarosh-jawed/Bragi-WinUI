@@ -14,6 +14,7 @@ This project follows a simple, human-readable changelog style inspired by Keep a
 - added Phase 15 automated validation coverage and manual validation documentation
 - conservatively tuned legacy category keywords to improve coverage for the original library CSV without adding new categories or introducing a second categorization mode
 - improved initial input-load responsiveness for large CSV files by moving heavy CSV read and extraction work off the UI thread and showing explicit load progress feedback
+- added conservative high-confidence keyword coverage improvements for Computer, Math, Humanities, and SLIM based on validation against the original library CSV
 
 ### Added
 - Phase 1 repository baseline and project standards

@@ -91,7 +91,11 @@
           "system analysis",
           "system design",
           "electronic data processing",
-          "artificial intelligence"
+          "artificial intelligence",
+          "automatic data processing",
+          "application software",
+          "android",
+          "computational complexity"
         ],
         "ExcludeKeywords": [ "children" ],
         "RequireAnyKeywords": [],
@@ -208,7 +212,9 @@
           "writing",
           "philosophy",
           "semiotics",
-          "literacy"
+          "literacy",
+          "humanities",
+          "mass media"
         ],
         "ExcludeKeywords": [ "children" ],
         "RequireAnyKeywords": [],
@@ -260,7 +266,9 @@
           "linear algebra",
           "calculus",
           "geometry",
-          "statistics"
+          "statistics",
+          "analysis of variance",
+          "biometry"
         ],
         "ExcludeKeywords": [ "children" ],
         "RequireAnyKeywords": [],
@@ -374,7 +382,14 @@
           "information science",
           "bibliography",
           "book collecting",
-          "books and reading"
+          "books and reading",
+          "antiquarian booksellers",
+          "book collectors",
+          "book industries and trade",
+          "best books",
+          "annotating, book",
+          "book thefts",
+          "classification"
         ],
         "RequireAnyKeywords": [],
         "DisableForFiction": true,
