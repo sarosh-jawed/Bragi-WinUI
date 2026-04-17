@@ -11,6 +11,10 @@ public sealed partial class PreviewResultsPage : Page
     {
         ViewModel = App.GetService<PreviewResultsPageViewModel>();
         InitializeComponent();
+
+        // Keep the page instance alive between navigations so the already-built
+        // preview visual tree can be reused instead of recreated on every visit.
+        NavigationCacheMode = Microsoft.UI.Xaml.Navigation.NavigationCacheMode.Enabled;
     }
 
     public PreviewResultsPageViewModel ViewModel { get; }

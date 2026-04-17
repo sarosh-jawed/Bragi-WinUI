@@ -85,7 +85,7 @@ public sealed class InputIngestService : IInputIngestService
         return await File.ReadAllTextAsync(sourceFilePath, cancellationToken);
     }
 
-    public Task<IReadOnlyList<IReadOnlyDictionary<string, string?>>> ReadCsvRowsAsync(
+    public async Task<IReadOnlyList<IReadOnlyDictionary<string, string?>>> ReadCsvRowsAsync(
         string sourceFilePath,
         CancellationToken cancellationToken = default)
     {
@@ -93,68 +93,75 @@ public sealed class InputIngestService : IInputIngestService
 
         _logger.LogInformation("Reading CSV input from {SourceFilePath}.", sourceFilePath);
 
-        using var parser = new TextFieldParser(sourceFilePath);
-        parser.TextFieldType = FieldType.Delimited;
-        parser.SetDelimiters(",");
-        parser.HasFieldsEnclosedInQuotes = true;
-        parser.TrimWhiteSpace = false;
-
-        if (parser.EndOfData)
-        {
-            throw new InvalidOperationException("CSV file does not contain a header row.");
-        }
-
-        var rawHeaders = parser.ReadFields();
-
-        if (rawHeaders is null || rawHeaders.Length == 0)
-        {
-            throw new InvalidOperationException("CSV header row could not be read.");
-        }
-
-        var headers = BuildHeaders(rawHeaders);
-        var rows = new List<IReadOnlyDictionary<string, string?>>();
-        var csvRowNumber = 2;
-
-        while (!parser.EndOfData)
+        // CSV parsing is synchronous in TextFieldParser. Run it off the UI thread so large
+        // library files do not make the desktop app feel frozen during the initial load step.
+        return await Task.Run<IReadOnlyList<IReadOnlyDictionary<string, string?>>>(() =>
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            try
-            {
-                var fields = parser.ReadFields();
+            using var parser = new TextFieldParser(sourceFilePath);
+            parser.TextFieldType = FieldType.Delimited;
+            parser.SetDelimiters(",");
+            parser.HasFieldsEnclosedInQuotes = true;
+            parser.TrimWhiteSpace = false;
 
-                if (fields is null)
+            if (parser.EndOfData)
+            {
+                throw new InvalidOperationException("CSV file does not contain a header row.");
+            }
+
+            var rawHeaders = parser.ReadFields();
+
+            if (rawHeaders is null || rawHeaders.Length == 0)
+            {
+                throw new InvalidOperationException("CSV header row could not be read.");
+            }
+
+            var headers = BuildHeaders(rawHeaders);
+            var rows = new List<IReadOnlyDictionary<string, string?>>();
+            var csvRowNumber = 2;
+
+            while (!parser.EndOfData)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                try
+                {
+                    var fields = parser.ReadFields();
+
+                    if (fields is null)
+                    {
+                        _logger.LogWarning(
+                            "Skipping CSV row {CsvRowNumber} in {SourceFilePath} because it could not be read.",
+                            csvRowNumber,
+                            sourceFilePath);
+
+                        continue;
+                    }
+
+                    rows.Add(BuildRow(headers, fields));
+                }
+                catch (MalformedLineException ex)
                 {
                     _logger.LogWarning(
-                        "Skipping CSV row {CsvRowNumber} in {SourceFilePath} because it could not be read.",
+                        ex,
+                        "Skipping malformed CSV row {CsvRowNumber} in {SourceFilePath}.",
                         csvRowNumber,
                         sourceFilePath);
-
-                    continue;
                 }
-
-                rows.Add(BuildRow(headers, fields));
+                finally
+                {
+                    csvRowNumber++;
+                }
             }
-            catch (MalformedLineException ex)
-            {
-                _logger.LogWarning(
-                    ex,
-                    "Skipping malformed CSV row {CsvRowNumber} in {SourceFilePath}.",
-                    csvRowNumber,
-                    sourceFilePath);
-            }
-            finally
-            {
-                csvRowNumber++;
-            }
-        }
 
-        _logger.LogInformation(
-            "Read {RowCount} CSV data rows from {SourceFilePath}.",
-            rows.Count,
-            sourceFilePath);
+            _logger.LogInformation(
+                "Read {RowCount} CSV data rows from {SourceFilePath}.",
+                rows.Count,
+                sourceFilePath);
 
-        return Task.FromResult<IReadOnlyList<IReadOnlyDictionary<string, string?>>>(rows);
+            return (IReadOnlyList<IReadOnlyDictionary<string, string?>>)rows;
+        }, cancellationToken);
     }
 
     private static string NormalizeExtension(string value)

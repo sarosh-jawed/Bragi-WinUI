@@ -26,7 +26,7 @@ public sealed class SubjectExtractionService : ISubjectExtractionService
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
-    public Task<ExtractionResult> ExtractFromPlainTextAsync(
+    public async Task<ExtractionResult> ExtractFromPlainTextAsync(
         string sourceFilePath,
         string textContent,
         InputOptions inputOptions,
@@ -46,77 +46,82 @@ public sealed class SubjectExtractionService : ISubjectExtractionService
             "Starting plain text subject extraction. SourceFilePath={SourceFilePath}",
             sourceFilePath);
 
-        var extractedSubjects = new List<ExtractedSubject>();
-        var seenSubjects = new HashSet<string>(StringComparer.Ordinal);
-        var totalRecordsRead = 0;
-        var blankOrIgnoredCount = 0;
-        var duplicateCount = 0;
-        var sequenceNumber = 1;
-
-        using var reader = new StringReader(textContent);
-
-        string? line;
-        var sourceRowNumber = 0;
-
-        while ((line = reader.ReadLine()) is not null)
+        // Extraction work is CPU-heavy for large inputs. Run it off the UI thread so the
+        // desktop shell remains responsive while the session cache is being built.
+        return await Task.Run(() =>
         {
-            cancellationToken.ThrowIfCancellationRequested();
+            var extractedSubjects = new List<ExtractedSubject>();
+            var seenSubjects = new HashSet<string>(StringComparer.Ordinal);
+            var totalRecordsRead = 0;
+            var blankOrIgnoredCount = 0;
+            var duplicateCount = 0;
+            var sequenceNumber = 1;
 
-            sourceRowNumber++;
-            totalRecordsRead++;
+            using var reader = new StringReader(textContent);
 
-            var preparedOriginal = PrepareOriginalSubject(line, behaviorOptions);
+            string? line;
+            var sourceRowNumber = 0;
 
-            if (string.IsNullOrWhiteSpace(preparedOriginal))
+            while ((line = reader.ReadLine()) is not null)
             {
-                if (behaviorOptions.IgnoreBlankSubjects)
+                cancellationToken.ThrowIfCancellationRequested();
+
+                sourceRowNumber++;
+                totalRecordsRead++;
+
+                var preparedOriginal = PrepareOriginalSubject(line, behaviorOptions);
+
+                if (string.IsNullOrWhiteSpace(preparedOriginal))
                 {
+                    if (behaviorOptions.IgnoreBlankSubjects)
+                    {
+                        blankOrIgnoredCount++;
+                        continue;
+                    }
+
                     blankOrIgnoredCount++;
                     continue;
                 }
 
-                blankOrIgnoredCount++;
-                continue;
+                var normalized = PrepareNormalizedSubject(preparedOriginal, behaviorOptions);
+
+                if (!seenSubjects.Add(normalized))
+                {
+                    duplicateCount++;
+                }
+
+                var entry = new SubjectEntry(
+                    new SubjectText(preparedOriginal),
+                    new NormalizedSubjectText(normalized),
+                    sourceFilePath,
+                    sourceRowNumber,
+                    null,
+                    null,
+                    InputFileKind.PlainText);
+
+                extractedSubjects.Add(new ExtractedSubject(entry, sequenceNumber));
+                sequenceNumber++;
             }
 
-            var normalized = PrepareNormalizedSubject(preparedOriginal, behaviorOptions);
-
-            if (!seenSubjects.Add(normalized))
-            {
-                duplicateCount++;
-            }
-
-            var entry = new SubjectEntry(
-                new SubjectText(preparedOriginal),
-                new NormalizedSubjectText(normalized),
+            _logger.LogInformation(
+                "Extracted {ExtractedCount} subjects from plain text input {SourceFilePath}. Blank ignored: {BlankCount}. Duplicates observed: {DuplicateCount}.",
+                extractedSubjects.Count,
                 sourceFilePath,
-                sourceRowNumber,
-                null,
-                null,
-                InputFileKind.PlainText);
+                blankOrIgnoredCount,
+                duplicateCount);
 
-            extractedSubjects.Add(new ExtractedSubject(entry, sequenceNumber));
-            sequenceNumber++;
-        }
-
-        _logger.LogInformation(
-            "Extracted {ExtractedCount} subjects from plain text input {SourceFilePath}. Blank ignored: {BlankCount}. Duplicates observed: {DuplicateCount}.",
-            extractedSubjects.Count,
-            sourceFilePath,
-            blankOrIgnoredCount,
-            duplicateCount);
-
-        return Task.FromResult(new ExtractionResult(
-            sourceFilePath,
-            InputFileKind.PlainText,
-            extractedSubjects,
-            totalRecordsRead,
-            blankOrIgnoredCount,
-            duplicateCount,
-            parseWarningCount: 0));
+            return new ExtractionResult(
+                sourceFilePath,
+                InputFileKind.PlainText,
+                extractedSubjects,
+                totalRecordsRead,
+                blankOrIgnoredCount,
+                duplicateCount,
+                parseWarningCount: 0);
+        }, cancellationToken);
     }
 
-    public Task<ExtractionResult> ExtractFromCsvAsync(
+    public async Task<ExtractionResult> ExtractFromCsvAsync(
         string sourceFilePath,
         IReadOnlyList<IReadOnlyDictionary<string, string?>> rows,
         CsvColumns csvColumns,
@@ -150,100 +155,106 @@ public sealed class SubjectExtractionService : ISubjectExtractionService
             sourceFilePath,
             csvColumns.SubjectColumnName);
 
-        var extractedSubjects = new List<ExtractedSubject>();
-        var seenSubjects = new HashSet<string>(StringComparer.Ordinal);
-        var totalRecordsRead = rows.Count;
-        var blankOrIgnoredCount = 0;
-        var duplicateCount = 0;
-        var parseWarningCount = 0;
-        var sequenceNumber = 1;
-
-        for (var rowIndex = 0; rowIndex < rows.Count; rowIndex++)
+        // Large CSV extraction is the heaviest part of the initial load experience.
+        // Run it on a background worker so the WinUI shell stays responsive while the
+        // extraction result is being built and cached.
+        return await Task.Run(() =>
         {
-            cancellationToken.ThrowIfCancellationRequested();
+            var extractedSubjects = new List<ExtractedSubject>();
+            var seenSubjects = new HashSet<string>(StringComparer.Ordinal);
+            var totalRecordsRead = rows.Count;
+            var blankOrIgnoredCount = 0;
+            var duplicateCount = 0;
+            var parseWarningCount = 0;
+            var sequenceNumber = 1;
 
-            var row = rows[rowIndex];
-            var sourceRowNumber = rowIndex + 2;
-
-            if (!row.TryGetValue(csvColumns.SubjectColumnName, out var rawSubjectValue))
+            for (var rowIndex = 0; rowIndex < rows.Count; rowIndex++)
             {
-                parseWarningCount++;
-                _logger.LogWarning(
-                    "CSV row {SourceRowNumber} in {SourceFilePath} is missing configured subject column '{SubjectColumnName}'.",
-                    sourceRowNumber,
+                cancellationToken.ThrowIfCancellationRequested();
+
+                var row = rows[rowIndex];
+                var sourceRowNumber = rowIndex + 2;
+
+                if (!row.TryGetValue(csvColumns.SubjectColumnName, out var rawSubjectValue))
+                {
+                    parseWarningCount++;
+                    _logger.LogWarning(
+                        "CSV row {SourceRowNumber} in {SourceFilePath} is missing configured subject column '{SubjectColumnName}'.",
+                        sourceRowNumber,
+                        sourceFilePath,
+                        csvColumns.SubjectColumnName);
+                    continue;
+                }
+
+                var sourceTitle = inputOptions.CaptureCsvSourceTitle
+                    ? GetOptionalValue(row, csvColumns.TitleColumnName)
+                    : null;
+
+                var sourceRecordId = inputOptions.CaptureCsvSourceRecordId
+                    ? GetOptionalValue(row, csvColumns.RecordIdColumnName)
+                    : null;
+
+                var subjectValues = ExtractSubjectValues(
+                    rawSubjectValue,
+                    csvColumns.SubjectColumnContainsJsonArray,
                     sourceFilePath,
-                    csvColumns.SubjectColumnName);
-                continue;
-            }
+                    sourceRowNumber,
+                    ref parseWarningCount);
 
-            var sourceTitle = inputOptions.CaptureCsvSourceTitle
-                ? GetOptionalValue(row, csvColumns.TitleColumnName)
-                : null;
-
-            var sourceRecordId = inputOptions.CaptureCsvSourceRecordId
-                ? GetOptionalValue(row, csvColumns.RecordIdColumnName)
-                : null;
-
-            var subjectValues = ExtractSubjectValues(
-                rawSubjectValue,
-                csvColumns.SubjectColumnContainsJsonArray,
-                sourceFilePath,
-                sourceRowNumber,
-                ref parseWarningCount);
-
-            if (subjectValues.Count == 0)
-            {
-                blankOrIgnoredCount++;
-                continue;
-            }
-
-            foreach (var subjectValue in subjectValues)
-            {
-                var preparedOriginal = PrepareOriginalSubject(subjectValue, behaviorOptions);
-
-                if (string.IsNullOrWhiteSpace(preparedOriginal))
+                if (subjectValues.Count == 0)
                 {
                     blankOrIgnoredCount++;
                     continue;
                 }
 
-                var normalized = PrepareNormalizedSubject(preparedOriginal, behaviorOptions);
-
-                if (!seenSubjects.Add(normalized))
+                foreach (var subjectValue in subjectValues)
                 {
-                    duplicateCount++;
+                    var preparedOriginal = PrepareOriginalSubject(subjectValue, behaviorOptions);
+
+                    if (string.IsNullOrWhiteSpace(preparedOriginal))
+                    {
+                        blankOrIgnoredCount++;
+                        continue;
+                    }
+
+                    var normalized = PrepareNormalizedSubject(preparedOriginal, behaviorOptions);
+
+                    if (!seenSubjects.Add(normalized))
+                    {
+                        duplicateCount++;
+                    }
+
+                    var entry = new SubjectEntry(
+                        new SubjectText(preparedOriginal),
+                        new NormalizedSubjectText(normalized),
+                        sourceFilePath,
+                        sourceRowNumber,
+                        sourceTitle,
+                        sourceRecordId,
+                        InputFileKind.Csv);
+
+                    extractedSubjects.Add(new ExtractedSubject(entry, sequenceNumber));
+                    sequenceNumber++;
                 }
-
-                var entry = new SubjectEntry(
-                    new SubjectText(preparedOriginal),
-                    new NormalizedSubjectText(normalized),
-                    sourceFilePath,
-                    sourceRowNumber,
-                    sourceTitle,
-                    sourceRecordId,
-                    InputFileKind.Csv);
-
-                extractedSubjects.Add(new ExtractedSubject(entry, sequenceNumber));
-                sequenceNumber++;
             }
-        }
 
-        _logger.LogInformation(
-            "Extracted {ExtractedCount} subjects from CSV input {SourceFilePath}. Parse warnings: {ParseWarningCount}. Blank ignored: {BlankCount}. Duplicates observed: {DuplicateCount}.",
-            extractedSubjects.Count,
-            sourceFilePath,
-            parseWarningCount,
-            blankOrIgnoredCount,
-            duplicateCount);
+            _logger.LogInformation(
+                "Extracted {ExtractedCount} subjects from CSV input {SourceFilePath}. Parse warnings: {ParseWarningCount}. Blank ignored: {BlankCount}. Duplicates observed: {DuplicateCount}.",
+                extractedSubjects.Count,
+                sourceFilePath,
+                parseWarningCount,
+                blankOrIgnoredCount,
+                duplicateCount);
 
-        return Task.FromResult(new ExtractionResult(
-            sourceFilePath,
-            InputFileKind.Csv,
-            extractedSubjects,
-            totalRecordsRead,
-            blankOrIgnoredCount,
-            duplicateCount,
-            parseWarningCount));
+            return new ExtractionResult(
+                sourceFilePath,
+                InputFileKind.Csv,
+                extractedSubjects,
+                totalRecordsRead,
+                blankOrIgnoredCount,
+                duplicateCount,
+                parseWarningCount);
+        }, cancellationToken);
     }
 
     private IReadOnlyList<string> ExtractSubjectValues(

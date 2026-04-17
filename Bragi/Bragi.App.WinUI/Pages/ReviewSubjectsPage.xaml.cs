@@ -10,6 +10,11 @@ public sealed partial class ReviewSubjectsPage : Page
     {
         ViewModel = App.GetService<ReviewSubjectsPageViewModel>();
         InitializeComponent();
+
+        // Keep the page instance alive between navigations so WinUI does not
+        // recreate and rebind the review list every time the user moves back
+        // and forth through the wizard.
+        NavigationCacheMode = Microsoft.UI.Xaml.Navigation.NavigationCacheMode.Enabled;
     }
 
     public ReviewSubjectsPageViewModel ViewModel { get; }

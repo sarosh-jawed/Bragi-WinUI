@@ -12,9 +12,12 @@ public sealed class WizardSessionStore
 
     private readonly object _syncLock = new();
     private CancellationTokenSource? _currentCancellationTokenSource;
+    private readonly SynchronizationContext? _synchronizationContext;
 
     public WizardSessionStore()
     {
+        _synchronizationContext = SynchronizationContext.Current;
+
         State = BuildState(
             currentStepIndex: 0,
             isInputLoaded: false,
@@ -434,6 +437,19 @@ public sealed class WizardSessionStore
 
     private void RaiseSessionChanged()
     {
-        SessionChanged?.Invoke(this, EventArgs.Empty);
+        var handler = SessionChanged;
+
+        if (handler is null)
+        {
+            return;
+        }
+
+        if (_synchronizationContext is null || SynchronizationContext.Current == _synchronizationContext)
+        {
+            handler.Invoke(this, EventArgs.Empty);
+            return;
+        }
+
+        _synchronizationContext.Post(_ => handler.Invoke(this, EventArgs.Empty), null);
     }
 }

@@ -3,9 +3,9 @@ using System.IO;
 using System.Threading.Tasks;
 using Bragi.App.WinUI.ViewModels.Base;
 using Bragi.Application.Contracts;
+using Bragi.Application.Errors;
 using Bragi.Application.Workflow;
 using Microsoft.Extensions.Logging;
-using Bragi.Application.Errors;
 
 namespace Bragi.App.WinUI.ViewModels;
 
@@ -18,6 +18,7 @@ public sealed class LoadInputPageViewModel : ObservableObject
     private string _selectedInputFilePath = string.Empty;
     private string _detectedInputKind = "Not loaded";
     private string _statusMessage = "Choose a .txt or .csv file to begin.";
+    private string _loadProgressText = "Ready to load a source file.";
     private int _totalRecordsRead;
     private int _extractedSubjectCount;
     private int _blankOrIgnoredCount;
@@ -48,6 +49,7 @@ public sealed class LoadInputPageViewModel : ObservableObject
                 OnPropertyChanged(nameof(InputFilePath));
                 OnPropertyChanged(nameof(FileNameDisplay));
                 OnPropertyChanged(nameof(CanReloadExtraction));
+                OnPropertyChanged(nameof(CanChooseFile));
             }
         }
     }
@@ -64,6 +66,12 @@ public sealed class LoadInputPageViewModel : ObservableObject
     {
         get => _statusMessage;
         private set => SetProperty(ref _statusMessage, value);
+    }
+
+    public string LoadProgressText
+    {
+        get => _loadProgressText;
+        private set => SetProperty(ref _loadProgressText, value);
     }
 
     public int TotalRecordsRead
@@ -110,11 +118,17 @@ public sealed class LoadInputPageViewModel : ObservableObject
             if (SetProperty(ref _isBusy, value))
             {
                 OnPropertyChanged(nameof(CanReloadExtraction));
+                OnPropertyChanged(nameof(CanChooseFile));
+                OnPropertyChanged(nameof(IsIdle));
             }
         }
     }
 
     public bool HasExtraction => ExtractedSubjectCount > 0 || TotalRecordsRead > 0;
+
+    public bool IsIdle => !IsBusy;
+
+    public bool CanChooseFile => !IsBusy;
 
     public bool CanReloadExtraction =>
         !IsBusy && !string.IsNullOrWhiteSpace(SelectedInputFilePath);
@@ -135,12 +149,14 @@ public sealed class LoadInputPageViewModel : ObservableObject
         try
         {
             IsBusy = true;
+            LoadProgressText = "Reading file and extracting subjects. Large CSV files may take a moment.";
             StatusMessage = "Loading input and extracting subjects...";
 
             var extractionResult = await _workflowOrchestrator.PreviewExtractionAsync(filePath);
 
             RefreshFromSession();
 
+            LoadProgressText = "Load completed.";
             StatusMessage =
                 $"Loaded {extractionResult.ExtractedCount} extracted subjects from {Path.GetFileName(filePath)}.";
         }
@@ -148,12 +164,14 @@ public sealed class LoadInputPageViewModel : ObservableObject
         {
             _logger.LogWarning("Input loading was cancelled for file {FilePath}.", filePath);
             RefreshFromSession();
+            LoadProgressText = "Load cancelled.";
             StatusMessage = "Input loading was cancelled.";
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to load input file {FilePath}.", filePath);
             RefreshFromSession();
+            LoadProgressText = "Load failed.";
             StatusMessage = UserMessageHelper.ForInputLoad(ex);
         }
         finally
@@ -163,6 +181,8 @@ public sealed class LoadInputPageViewModel : ObservableObject
             OnPropertyChanged(nameof(FileNameDisplay));
             OnPropertyChanged(nameof(InputFilePath));
             OnPropertyChanged(nameof(CanReloadExtraction));
+            OnPropertyChanged(nameof(CanChooseFile));
+            OnPropertyChanged(nameof(IsIdle));
         }
     }
 
@@ -184,10 +204,17 @@ public sealed class LoadInputPageViewModel : ObservableObject
         ParseWarningCount = extractionResult?.ParseWarningCount ?? 0;
         IsBusy = _wizardSessionStore.State.IsBusy;
 
+        if (!IsBusy && extractionResult is null)
+        {
+            LoadProgressText = "Ready to load a source file.";
+        }
+
         OnPropertyChanged(nameof(HasExtraction));
         OnPropertyChanged(nameof(FileNameDisplay));
         OnPropertyChanged(nameof(InputFilePath));
         OnPropertyChanged(nameof(CanReloadExtraction));
+        OnPropertyChanged(nameof(CanChooseFile));
+        OnPropertyChanged(nameof(IsIdle));
     }
 
     private void OnSessionChanged(object? sender, EventArgs e)
