@@ -53,12 +53,25 @@
             <Button
                             Content="Choose File"
                             Click="ChooseFileButton_OnClick"
-                            MinWidth="128" />
+                            MinWidth="128"
+                            IsEnabled="{x:Bind ViewModel.CanChooseFile, Mode=OneWay}" />
             <Button
                             Content="Reload Extraction"
                             Click="ReloadButton_OnClick"
                             MinWidth="148"
                             IsEnabled="{x:Bind ViewModel.CanReloadExtraction, Mode=OneWay}" />
+          </StackPanel>
+
+          <StackPanel
+                        Orientation="Horizontal"
+                        Spacing="12">
+            <ProgressRing
+                            IsActive="{x:Bind ViewModel.IsBusy, Mode=OneWay}"
+                            Width="20"
+                            Height="20" />
+            <TextBlock
+                            Text="{x:Bind ViewModel.LoadProgressText, Mode=OneWay}"
+                            Style="{StaticResource PageMutedTextBlockStyle}" />
           </StackPanel>
 
           <TextBlock
