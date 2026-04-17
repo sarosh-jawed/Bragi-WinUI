@@ -14,7 +14,7 @@ public sealed partial class PreviewResultsPage : Page
 
         // Keep the page instance alive between navigations so the already-built
         // preview visual tree can be reused instead of recreated on every visit.
-        NavigationCacheMode = Microsoft.UI.Xaml.Navigation.NavigationCacheMode.Enabled;
+        NavigationCacheMode = Microsoft.UI.Xaml.Navigation.NavigationCacheMode.Required;
     }
 
     public PreviewResultsPageViewModel ViewModel { get; }

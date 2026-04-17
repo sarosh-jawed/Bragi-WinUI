@@ -34,6 +34,9 @@ public sealed partial class MainWindow : Window
     {
         ViewModel.Initialize();
         RefreshShellNavigationState();
+
+        ContentFrame.CacheSize = 5;
+
         NavigateToCurrentPage();
 
         _logger.LogInformation("Bragi shell loaded.");
