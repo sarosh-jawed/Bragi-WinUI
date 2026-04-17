@@ -13,26 +13,26 @@
     <StackPanel Padding="24" Spacing="16">
 
       <Border
-                Background="{StaticResource WarningBannerBackgroundBrush}"
-                BorderBrush="{StaticResource WarningBannerBorderBrush}"
-                BorderThickness="1"
-                CornerRadius="8"
-                Padding="12"
-                Margin="0,0,0,16">
+          Background="{StaticResource WarningBannerBackgroundBrush}"
+          BorderBrush="{StaticResource WarningBannerBorderBrush}"
+          BorderThickness="1"
+          CornerRadius="8"
+          Padding="12"
+          Margin="0,0,0,16">
 
         <StackPanel Orientation="Horizontal" Spacing="10">
           <FontIcon
-                        Glyph="&#xE7BA;"
-                        Foreground="{StaticResource WarningBannerForegroundBrush}" />
+              Glyph="&#xE7BA;"
+              Foreground="{StaticResource WarningBannerForegroundBrush}" />
           <StackPanel Spacing="2">
             <TextBlock
-                            Text="Preview guidance"
-                            FontWeight="SemiBold"
-                            Foreground="{StaticResource WarningBannerForegroundBrush}" />
+                Text="Preview guidance"
+                FontWeight="SemiBold"
+                Foreground="{StaticResource WarningBannerForegroundBrush}" />
             <TextBlock
-                            Text="High uncategorized counts usually indicate rule coverage gaps or expected legacy-compatible exclusions."
-                            TextWrapping="Wrap"
-                            Foreground="{StaticResource WarningBannerForegroundBrush}" />
+                Text="High uncategorized counts usually indicate rule coverage gaps or expected legacy-compatible exclusions."
+                TextWrapping="Wrap"
+                Foreground="{StaticResource WarningBannerForegroundBrush}" />
           </StackPanel>
         </StackPanel>
       </Border>
@@ -40,19 +40,19 @@
       <Border Style="{StaticResource AppCardBorderStyle}">
         <StackPanel Spacing="12">
           <TextBlock
-                        Text="Preview categorized results"
-                        Style="{StaticResource PageSectionTitleTextBlockStyle}" />
+              Text="Preview categorized results"
+              Style="{StaticResource PageSectionTitleTextBlockStyle}" />
 
           <Button
-                        Content="Generate Preview"
-                        Click="GeneratePreviewButton_OnClick"
-                        MinWidth="160"
-                        Margin="0,0,0,12"
-                        IsEnabled="{x:Bind ViewModel.CanGeneratePreview, Mode=OneWay}" />
+              Content="Generate Preview"
+              Click="GeneratePreviewButton_OnClick"
+              MinWidth="160"
+              Margin="0,0,0,12"
+              IsEnabled="{x:Bind ViewModel.CanGeneratePreview, Mode=OneWay}" />
 
           <TextBlock
-                        Text="{x:Bind ViewModel.StatusMessage, Mode=OneWay}"
-                        Style="{StaticResource PageMutedTextBlockStyle}" />
+              Text="{x:Bind ViewModel.StatusMessage, Mode=OneWay}"
+              Style="{StaticResource PageMutedTextBlockStyle}" />
         </StackPanel>
       </Border>
 
@@ -84,8 +84,8 @@
         <Border Grid.Column="1" Style="{StaticResource AppCardBorderStyle}">
           <StackPanel Spacing="12">
             <TextBlock
-                            Text="Category counts"
-                            Style="{StaticResource PageSubsectionTitleTextBlockStyle}" />
+                Text="Category counts"
+                Style="{StaticResource PageSubsectionTitleTextBlockStyle}" />
 
             <ItemsControl ItemsSource="{x:Bind ViewModel.CategoryCounts, Mode=OneWay}">
               <ItemsControl.ItemTemplate>
@@ -109,59 +109,75 @@
       <Border Style="{StaticResource AppCardBorderStyle}">
         <StackPanel Spacing="12">
           <TextBlock
-                        Text="Category preview"
-                        Style="{StaticResource PageSubsectionTitleTextBlockStyle}" />
+              Text="Category preview"
+              Style="{StaticResource PageSubsectionTitleTextBlockStyle}" />
 
-          <ScrollViewer MaxHeight="360" VerticalScrollBarVisibility="Auto">
-            <ItemsControl ItemsSource="{x:Bind ViewModel.CategoryGroups, Mode=OneWay}">
-              <ItemsControl.ItemTemplate>
-                <DataTemplate>
-                  <Expander Header="{Binding DisplayName}" Margin="0,0,0,10">
-                    <StackPanel Spacing="10" Padding="8">
-                      <TextBlock Text="{Binding Count}" Style="{StaticResource MetricAccentValueTextBlockStyle}" />
-                      <ItemsControl ItemsSource="{Binding Subjects}">
-                        <ItemsControl.ItemTemplate>
-                          <DataTemplate>
-                            <Border Style="{StaticResource AppSubtleCardBorderStyle}" Margin="0,0,0,8">
-                              <StackPanel Spacing="4">
-                                <TextBlock Text="{Binding SubjectText}" FontWeight="SemiBold" />
-                                <TextBlock Text="{Binding Reason}" Style="{StaticResource PageMutedTextBlockStyle}" />
-                                <TextBlock Text="{Binding SourceMetadata}" Style="{StaticResource PageMutedTextBlockStyle}" />
-                              </StackPanel>
-                            </Border>
-                          </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                      </ItemsControl>
-                    </StackPanel>
-                  </Expander>
-                </DataTemplate>
-              </ItemsControl.ItemTemplate>
-            </ItemsControl>
-          </ScrollViewer>
+          <TextBlock
+              Text="{x:Bind ViewModel.CategoryPreviewWindowText, Mode=OneWay}"
+              Style="{StaticResource PageMutedTextBlockStyle}" />
+
+          <ComboBox
+              ItemsSource="{x:Bind ViewModel.CategoryGroups, Mode=OneWay}"
+              SelectedItem="{x:Bind ViewModel.SelectedCategoryGroup, Mode=TwoWay}"
+              PlaceholderText="Choose a category to inspect"
+              MinWidth="280">
+            <ComboBox.ItemTemplate>
+              <DataTemplate>
+                <TextBlock Text="{Binding OptionLabel}" />
+              </DataTemplate>
+            </ComboBox.ItemTemplate>
+          </ComboBox>
+
+          <Border Style="{StaticResource AppSubtleCardBorderStyle}">
+            <StackPanel Spacing="10">
+              <TextBlock
+                  Text="{x:Bind ViewModel.SelectedCategoryPreviewTitle, Mode=OneWay}"
+                  Style="{StaticResource PageSubsectionTitleTextBlockStyle}" />
+              <TextBlock
+                  Text="{x:Bind ViewModel.SelectedCategoryPreviewSummary, Mode=OneWay}"
+                  Style="{StaticResource PageMutedTextBlockStyle}" />
+
+              <ItemsControl ItemsSource="{x:Bind ViewModel.SelectedCategorySubjects, Mode=OneWay}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate>
+                    <Border Style="{StaticResource AppSubtleCardBorderStyle}" Margin="0,0,0,8">
+                      <StackPanel Spacing="4">
+                        <TextBlock Text="{Binding SubjectText}" FontWeight="SemiBold" />
+                        <TextBlock Text="{Binding Reason}" Style="{StaticResource PageMutedTextBlockStyle}" />
+                        <TextBlock Text="{Binding SourceMetadata}" Style="{StaticResource PageMutedTextBlockStyle}" />
+                      </StackPanel>
+                    </Border>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </StackPanel>
+          </Border>
         </StackPanel>
       </Border>
 
       <Border Style="{StaticResource AppCardBorderStyle}">
         <StackPanel Spacing="12">
           <TextBlock
-                        Text="Uncategorized preview"
-                        Style="{StaticResource PageSubsectionTitleTextBlockStyle}" />
+              Text="Uncategorized preview"
+              Style="{StaticResource PageSubsectionTitleTextBlockStyle}" />
 
-          <ScrollViewer MaxHeight="320" VerticalScrollBarVisibility="Auto">
-            <ItemsControl ItemsSource="{x:Bind ViewModel.UncategorizedSubjects, Mode=OneWay}">
-              <ItemsControl.ItemTemplate>
-                <DataTemplate>
-                  <Border Style="{StaticResource AppSubtleCardBorderStyle}" Margin="0,0,0,8">
-                    <StackPanel Spacing="4">
-                      <TextBlock Text="{Binding SubjectText}" FontWeight="SemiBold" />
-                      <TextBlock Text="{Binding Reason}" Style="{StaticResource PageMutedTextBlockStyle}" />
-                      <TextBlock Text="{Binding SourceMetadata}" Style="{StaticResource PageMutedTextBlockStyle}" />
-                    </StackPanel>
-                  </Border>
-                </DataTemplate>
-              </ItemsControl.ItemTemplate>
-            </ItemsControl>
-          </ScrollViewer>
+          <TextBlock
+              Text="{x:Bind ViewModel.UncategorizedPreviewWindowText, Mode=OneWay}"
+              Style="{StaticResource PageMutedTextBlockStyle}" />
+
+          <ItemsControl ItemsSource="{x:Bind ViewModel.UncategorizedSubjects, Mode=OneWay}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <Border Style="{StaticResource AppSubtleCardBorderStyle}" Margin="0,0,0,8">
+                  <StackPanel Spacing="4">
+                    <TextBlock Text="{Binding SubjectText}" FontWeight="SemiBold" />
+                    <TextBlock Text="{Binding Reason}" Style="{StaticResource PageMutedTextBlockStyle}" />
+                    <TextBlock Text="{Binding SourceMetadata}" Style="{StaticResource PageMutedTextBlockStyle}" />
+                  </StackPanel>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
         </StackPanel>
       </Border>
     </StackPanel>

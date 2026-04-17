@@ -9,7 +9,7 @@ namespace Bragi.App.WinUI.ViewModels;
 
 public sealed class ReviewSubjectsPageViewModel : ObservableObject
 {
-    private const int PreviewLimit = 100;
+    private const int PreviewLimit = 50;
 
     private readonly WizardSessionStore _wizardSessionStore;
     private readonly ILogger<ReviewSubjectsPageViewModel> _logger;
