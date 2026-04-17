@@ -576,6 +576,7 @@ public sealed class CategorizationServiceTests
         Assert.Equal("humanities", result.CategorizedSubjects[0].Matches[0].CategoryKey.Value);
     }
 
+
     [Fact]
     public async Task CategorizeAsync_RoutesBookIndustriesAndTrade_ToSlim()
     {
@@ -618,6 +619,7 @@ public sealed class CategorizationServiceTests
         Assert.Equal(0, result.UncategorizedSubjectCount);
         Assert.Equal("slim", result.CategorizedSubjects[0].Matches[0].CategoryKey.Value);
     }
+
 
     private static CategorizationService CreateService()
     {
