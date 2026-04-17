@@ -20,7 +20,7 @@
         "DisplayName": "Art",
         "OutputFileName": "ArtSubjects.txt",
         "IncludeKeywords": [ "art", "artist", "painting" ],
-        "ExcludeKeywords": [ "children" ],
+        "ExcludeKeywords": [ "children", "artificial intelligence" ],
         "RequireAnyKeywords": [],
         "DisableForFiction": true,
         "DisableForJuvenile": true,
@@ -90,7 +90,8 @@
           "systems theory",
           "system analysis",
           "system design",
-          "electronic data processing"
+          "electronic data processing",
+          "artificial intelligence"
         ],
         "ExcludeKeywords": [ "children" ],
         "RequireAnyKeywords": [],
@@ -182,7 +183,7 @@
         "DisplayName": "HPER",
         "OutputFileName": "HPERSubjects.txt",
         "IncludeKeywords": [ "health", "exercise", "athlete", "athletic" ],
-        "ExcludeKeywords": [ "children" ],
+        "ExcludeKeywords": [ "children", "research methodology", "problems exercises etc" ],
         "RequireAnyKeywords": [],
         "DisableForFiction": true,
         "DisableForJuvenile": true,

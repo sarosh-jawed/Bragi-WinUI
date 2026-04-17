@@ -378,6 +378,83 @@ public sealed class CategorizationServiceTests
         Assert.Equal("math", result.CategorizedSubjects[0].Matches[0].CategoryKey.Value);
     }
 
+    [Fact]
+    public async Task CategorizeAsync_RoutesArtificialIntelligence_ToComputer_AndNotArt()
+    {
+        var service = CreateService();
+
+        var extractionResult = CreateExtractionResult(
+            CreateExtractedSubject(1, "Artificial intelligence", 2));
+
+        var categoryRules = new[]
+        {
+        CreateRule(
+            "art",
+            "ArtSubjects.txt",
+            includeKeywords: [ "art", "artist", "painting" ],
+            sortOrder: 10,
+            excludeKeywords: [ "artificial intelligence" ]),
+        CreateRule(
+            "computer",
+            "ComputerSubjects.txt",
+            includeKeywords:
+            [
+                "computer",
+                "information technology",
+                "technology",
+                "coding",
+                "cybernetics",
+                "information theory",
+                "system theory",
+                "systems theory",
+                "system analysis",
+                "system design",
+                "electronic data processing",
+                "artificial intelligence"
+            ],
+            sortOrder: 20)
+    };
+
+        var result = await service.CategorizeAsync(
+            extractionResult,
+            categoryRules,
+            new BehaviorOptions { AllowMultiMatch = true });
+
+        Assert.Equal(1, result.CategorizedSubjectCount);
+        Assert.Equal(0, result.UncategorizedSubjectCount);
+        Assert.Equal(1, result.TotalAssignments);
+
+        var categorizedSubject = result.CategorizedSubjects.Single();
+        Assert.Single(categorizedSubject.Matches);
+        Assert.Equal("computer", categorizedSubject.Matches[0].CategoryKey.Value);
+    }
+
+    [Fact]
+    public async Task CategorizeAsync_DoesNotRoute_ResearchMethodologyProblemsExercises_ToHper()
+    {
+        var service = CreateService();
+
+        var extractionResult = CreateExtractionResult(
+            CreateExtractedSubject(1, "Research Methodology Problems exercises etc", 2));
+
+        var categoryRules = new[]
+        {
+        CreateRule(
+            "hper",
+            "HPERSubjects.txt",
+            includeKeywords: [ "health", "exercise", "athlete", "athletic" ],
+            excludeKeywords: [ "research methodology", "problems exercises etc" ])
+    };
+
+        var result = await service.CategorizeAsync(
+            extractionResult,
+            categoryRules,
+            new BehaviorOptions());
+
+        Assert.Equal(0, result.CategorizedSubjectCount);
+        Assert.Equal(1, result.UncategorizedSubjectCount);
+    }
+
     private static CategorizationService CreateService()
     {
         var normalizationHelper = new SubjectNormalizationHelper();
@@ -426,7 +503,8 @@ public sealed class CategorizationServiceTests
         IReadOnlyList<string> includeKeywords,
         int sortOrder = 0,
         bool disableForFiction = false,
-        bool disableForJuvenile = false)
+        bool disableForJuvenile = false,
+        IReadOnlyList<string>? excludeKeywords = null)
     {
         return new CategoryRule
         {
@@ -434,7 +512,7 @@ public sealed class CategorizationServiceTests
             DisplayName = key,
             OutputFileName = outputFileName,
             IncludeKeywords = includeKeywords.ToList(),
-            ExcludeKeywords = [],
+            ExcludeKeywords = excludeKeywords?.ToList() ?? [],
             RequireAnyKeywords = [],
             DisableForFiction = disableForFiction,
             DisableForJuvenile = disableForJuvenile,
