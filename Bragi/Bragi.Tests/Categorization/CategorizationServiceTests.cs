@@ -455,6 +455,170 @@ public sealed class CategorizationServiceTests
         Assert.Equal(1, result.UncategorizedSubjectCount);
     }
 
+    [Fact]
+    public async Task CategorizeAsync_RoutesAutomaticDataProcessing_ToComputer()
+    {
+        var service = CreateService();
+
+        var extractionResult = CreateExtractionResult(
+            CreateExtractedSubject(1, "Automatic Data Processing", 2));
+
+        var categoryRules = new[]
+        {
+        CreateRule(
+            "computer",
+            "ComputerSubjects.txt",
+            includeKeywords:
+            [
+                "computer",
+                "information technology",
+                "technology",
+                "coding",
+                "cybernetics",
+                "information theory",
+                "system theory",
+                "systems theory",
+                "system analysis",
+                "system design",
+                "electronic data processing",
+                "artificial intelligence",
+                "automatic data processing",
+                "application software",
+                "android",
+                "computational complexity"
+            ])
+    };
+
+        var result = await service.CategorizeAsync(
+            extractionResult,
+            categoryRules,
+            new BehaviorOptions());
+
+        Assert.Equal(1, result.CategorizedSubjectCount);
+        Assert.Equal(0, result.UncategorizedSubjectCount);
+        Assert.Equal("computer", result.CategorizedSubjects[0].Matches[0].CategoryKey.Value);
+    }
+
+    [Fact]
+    public async Task CategorizeAsync_RoutesAnalysisOfVariance_ToMath()
+    {
+        var service = CreateService();
+
+        var extractionResult = CreateExtractionResult(
+            CreateExtractedSubject(1, "Analysis of Variance", 2));
+
+        var categoryRules = new[]
+        {
+        CreateRule(
+            "math",
+            "MathSubjects.txt",
+            includeKeywords:
+            [
+                "math",
+                "trigonometry",
+                "linear algebra",
+                "calculus",
+                "geometry",
+                "statistics",
+                "analysis of variance",
+                "biometry"
+            ])
+    };
+
+        var result = await service.CategorizeAsync(
+            extractionResult,
+            categoryRules,
+            new BehaviorOptions());
+
+        Assert.Equal(1, result.CategorizedSubjectCount);
+        Assert.Equal(0, result.UncategorizedSubjectCount);
+        Assert.Equal("math", result.CategorizedSubjects[0].Matches[0].CategoryKey.Value);
+    }
+
+    [Fact]
+    public async Task CategorizeAsync_RoutesMassMedia_ToHumanities()
+    {
+        var service = CreateService();
+
+        var extractionResult = CreateExtractionResult(
+            CreateExtractedSubject(1, "Mass media", 2));
+
+        var categoryRules = new[]
+        {
+        CreateRule(
+            "humanities",
+            "HumanitiesSubjects.txt",
+            includeKeywords:
+            [
+                "language",
+                "literature",
+                "communication",
+                "oral communication",
+                "written communication",
+                "nonverbal communication",
+                "rhetoric",
+                "writing",
+                "philosophy",
+                "semiotics",
+                "literacy",
+                "humanities",
+                "mass media"
+            ])
+    };
+
+        var result = await service.CategorizeAsync(
+            extractionResult,
+            categoryRules,
+            new BehaviorOptions());
+
+        Assert.Equal(1, result.CategorizedSubjectCount);
+        Assert.Equal(0, result.UncategorizedSubjectCount);
+        Assert.Equal("humanities", result.CategorizedSubjects[0].Matches[0].CategoryKey.Value);
+    }
+
+    [Fact]
+    public async Task CategorizeAsync_RoutesBookIndustriesAndTrade_ToSlim()
+    {
+        var service = CreateService();
+
+        var extractionResult = CreateExtractionResult(
+            CreateExtractedSubject(1, "Book industries and trade", 2));
+
+        var categoryRules = new[]
+        {
+        CreateRule(
+            "slim",
+            "SlimSubjects.txt",
+            includeKeywords:
+            [
+                "library",
+                "librarian",
+                "libraries",
+                "collection development",
+                "information science",
+                "bibliography",
+                "book collecting",
+                "books and reading",
+                "antiquarian booksellers",
+                "book collectors",
+                "book industries and trade",
+                "best books",
+                "annotating, book",
+                "book thefts",
+                "classification"
+            ])
+    };
+
+        var result = await service.CategorizeAsync(
+            extractionResult,
+            categoryRules,
+            new BehaviorOptions());
+
+        Assert.Equal(1, result.CategorizedSubjectCount);
+        Assert.Equal(0, result.UncategorizedSubjectCount);
+        Assert.Equal("slim", result.CategorizedSubjects[0].Matches[0].CategoryKey.Value);
+    }
+
     private static CategorizationService CreateService()
     {
         var normalizationHelper = new SubjectNormalizationHelper();
