@@ -4,9 +4,11 @@ using Bragi.App.WinUI.ViewModels;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using WinRT.Interop;
+using Microsoft.UI.Windowing;
+using System.IO;
 
 namespace Bragi.App.WinUI;
-
 public sealed partial class MainWindow : Window
 {
     private readonly ILogger<MainWindow> _logger;
@@ -21,6 +23,12 @@ public sealed partial class MainWindow : Window
 
         InitializeComponent();
 
+        var hwnd = WindowNative.GetWindowHandle(this);
+        var windowId = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(hwnd);
+        var appWindow = AppWindow.GetFromWindowId(windowId);
+
+        var iconPath = Path.Combine(AppContext.BaseDirectory, "Assets", "Bragi.ico");
+        appWindow.SetIcon(iconPath);
         Title = ViewModel.WindowTitle;
 
         Activated += MainWindow_OnActivated;
