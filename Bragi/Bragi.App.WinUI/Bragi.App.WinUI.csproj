@@ -73,13 +73,17 @@
     <HasPackageAndPublishMenu>true</HasPackageAndPublishMenu>
   </PropertyGroup>
 
-  <!-- Publish Properties -->
-  <PropertyGroup>
-    <PublishReadyToRun Condition="'$(Configuration)' == 'Debug'">False</PublishReadyToRun>
-    <PublishReadyToRun Condition="'$(Configuration)' != 'Debug'">True</PublishReadyToRun>
-    <PublishTrimmed Condition="'$(Configuration)' == 'Debug'">False</PublishTrimmed>
-    <PublishTrimmed Condition="'$(Configuration)' != 'Debug'">True</PublishTrimmed>
-  </PropertyGroup>
+    <!--
+    Keep publish-only optimizations out of normal solution builds.
+
+    CI build/test runs a standard Release build of the solution, not a publish.
+    ReadyToRun and trimming are controlled in the publish profile instead so
+    packaging can opt in without breaking regular build validation.
+  -->
+    <PropertyGroup>
+        <PublishReadyToRun>false</PublishReadyToRun>
+        <PublishTrimmed>false</PublishTrimmed>
+    </PropertyGroup>
     <ItemGroup>
         <Content Include="config.json">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
