@@ -16,15 +16,16 @@ This project follows a simple, human-readable changelog style inspired by Keep a
 - improved initial input-load responsiveness for large CSV files by moving heavy CSV read and extraction work off the UI thread and showing explicit load progress feedback
 - added conservative high-confidence keyword coverage improvements for Computer, Math, Humanities, and SLIM based on validation against the original library CSV
 - added test coverage for conservative keyword coverage improvements in Computer, Math, Humanities, and SLIM
+- polished README to reflect the actual implemented Bragi workflow and release-readiness state
+- updated screenshot tracking for final release preparation
+- documented future merge-readiness and Hel-aligned architectural checkpoints
 
 ### Added
-- Phase 1 repository baseline and project standards
-- professional README structure
-- changelog baseline
-- shared editor configuration
-- project conventions document
-- testing baseline document
-- screenshots tracking document
+- release-readiness documentation for install notes, known limitations, release notes, and architecture audit
+- release bundle preparation script for final packaging
+- GitHub Actions CI workflow for restore, build, and test
+- example local configuration override file
+- folder publish profile for `win-x64`
 
 ## [0.1.0] - 2026-04-07
 
