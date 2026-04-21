@@ -43,7 +43,7 @@ public sealed class RunSummaryBuilder
         builder.AppendLine(RenderDetailLine(textTemplate, "Duplicate count", runSummary.DuplicateCount.ToString()));
         builder.AppendLine();
 
-        builder.AppendLine("Category counts");
+        builder.AppendLine("Category assignment counts");
 
         foreach (var rule in orderedRules)
         {
@@ -58,6 +58,31 @@ public sealed class RunSummaryBuilder
                 rule.DisplayName,
                 rule.OutputFileName,
                 categoryCount));
+        }
+
+        builder.AppendLine();
+        builder.AppendLine("Exported file counts");
+        builder.AppendLine(RenderDetailLine(textTemplate, "Outputs sorted", runSummary.OutputsSorted.ToString().ToLowerInvariant()));
+        builder.AppendLine(RenderDetailLine(textTemplate, "Outputs deduplicated", runSummary.OutputsDeduplicated.ToString().ToLowerInvariant()));
+        builder.AppendLine(RenderDetailLine(textTemplate, "Exported categorized line total", runSummary.ExportedCategoryLineCountTotal.ToString()));
+        builder.AppendLine(RenderDetailLine(textTemplate, "Exported uncategorized line total", runSummary.ExportedUncategorizedLineCount.ToString()));
+        builder.AppendLine("Note: category assignment counts may be higher than exported file line counts because export output is sorted and deduplicated.");
+        builder.AppendLine();
+        builder.AppendLine("Per-category exported unique line counts");
+
+        foreach (var rule in orderedRules)
+        {
+            var categoryKey = new CategoryKey(rule.Key);
+            var exportedLineCount = runSummary.ExportedCategoryLineCounts.TryGetValue(categoryKey, out var count)
+                ? count
+                : 0;
+
+            builder.AppendLine(RenderCategoryLine(
+                textTemplate,
+                rule.Key,
+                rule.DisplayName,
+                rule.OutputFileName,
+                exportedLineCount));
         }
 
         return builder.ToString().TrimEnd();

@@ -183,6 +183,17 @@ Expected result:
 - export does not proceed
 - the app shows a friendly message asking the user to choose an output folder first
 
+### Case 10: summary counts versus exported file line counts
+1. Load input and complete export.
+2. Open `RunSummary.txt`.
+3. Compare the assignment metrics with the actual exported category file line counts.
+
+Expected result:
+- assignment counts are present
+- exported unique line counts are present
+- a note explaining the difference is present
+- counts reconcile correctly
+
 ---
 
 ## 4. Local-only exploratory validation with the original library CSV

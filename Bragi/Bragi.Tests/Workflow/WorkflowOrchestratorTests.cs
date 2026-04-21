@@ -49,7 +49,6 @@ public sealed class WorkflowOrchestratorTests
             var textExportService = new TextExportService(
                 NullLogger<TextExportService>.Instance,
                 new TextBodyBuilder(),
-                new RunSummaryBuilder(),
                 config);
 
             var workflowOrchestrator = new WorkflowOrchestrator(
@@ -59,7 +58,8 @@ public sealed class WorkflowOrchestratorTests
                 inputIngestService,
                 subjectExtractionService,
                 categorizationService,
-                textExportService);
+                textExportService,
+                new RunSummaryBuilder());
 
             var runSummary = await workflowOrchestrator.ExecuteAsync(inputFilePath);
 
@@ -120,7 +120,8 @@ public sealed class WorkflowOrchestratorTests
             new CancellingInputIngestService(cancelDuringTextRead: true),
             new StubSubjectExtractionService(CreateExtractionResult("C:\\Input\\subjects.txt", InputFileKind.PlainText)),
             new StubCategorizationService(CreateCategorizationResult("C:\\Input\\subjects.txt", InputFileKind.PlainText)),
-            new NoOpTextExportService());
+            new NoOpTextExportService(),
+            new RunSummaryBuilder());
 
         await Assert.ThrowsAsync<OperationCanceledException>(() =>
             workflowOrchestrator.PreviewExtractionAsync("C:\\Input\\subjects.txt"));
@@ -147,7 +148,8 @@ public sealed class WorkflowOrchestratorTests
             new SuccessfulInputIngestService(InputFileKind.PlainText, "Art"),
             new StubSubjectExtractionService(extractionResult),
             new CancellingCategorizationService(),
-            new NoOpTextExportService());
+            new NoOpTextExportService(),
+            new RunSummaryBuilder());
 
         await Assert.ThrowsAsync<OperationCanceledException>(() =>
             workflowOrchestrator.PreviewCategorizationAsync("C:\\Input\\subjects.txt"));
@@ -184,7 +186,8 @@ public sealed class WorkflowOrchestratorTests
                 new SuccessfulInputIngestService(InputFileKind.PlainText, "Art"),
                 new StubSubjectExtractionService(extractionResult),
                 new StubCategorizationService(categorizationResult),
-                new CancellingTextExportService());
+                new CancellingTextExportService(),
+                new RunSummaryBuilder());
 
             await Assert.ThrowsAsync<OperationCanceledException>(() =>
                 workflowOrchestrator.ExecuteAsync("C:\\Input\\subjects.txt"));
@@ -436,23 +439,34 @@ public sealed class WorkflowOrchestratorTests
 
     private sealed class NoOpTextExportService : ITextExportService
     {
-        public Task ExportAsync(
+        public Task<ExportResult> ExportAsync(
             CategorizationResult categorizationResult,
-            RunSummary runSummary,
+            DateTimeOffset exportTimestampUtc,
             Output outputOptions,
             TextTemplate textTemplate,
             IReadOnlyList<CategoryRule> categoryRules,
             CancellationToken cancellationToken = default)
         {
-            return Task.CompletedTask;
+            var outputDirectory = outputOptions.CreateMonthlySubfolder
+                ? Path.Combine(outputOptions.RootPath, exportTimestampUtc.ToString(outputOptions.MonthlySubfolderFormat))
+                : outputOptions.RootPath;
+
+            return Task.FromResult(new ExportResult(
+                outputDirectory,
+                Array.Empty<string>(),
+                new Dictionary<CategoryKey, int>(),
+                0,
+                0,
+                outputsSorted: false,
+                outputsDeduplicated: false));
         }
     }
 
     private sealed class CancellingTextExportService : ITextExportService
     {
-        public Task ExportAsync(
+        public Task<ExportResult> ExportAsync(
             CategorizationResult categorizationResult,
-            RunSummary runSummary,
+            DateTimeOffset exportTimestampUtc,
             Output outputOptions,
             TextTemplate textTemplate,
             IReadOnlyList<CategoryRule> categoryRules,

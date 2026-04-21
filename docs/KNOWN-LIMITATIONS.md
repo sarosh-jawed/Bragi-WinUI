@@ -45,3 +45,11 @@ The repository is prepared around the current x64 desktop workflow. Additional r
 ## 7. Future classification refinement is outside current scope
 
 Later refinement may map or validate subjects against more formal library-controlled references. That work is intentionally not part of the current release-readiness phase.
+
+## 8. Assignment counts and exported file line counts may differ
+
+Preview and run summary reporting include categorization assignment metrics.
+
+Exported category files contain sorted and deduplicated subject lines. Because of that, exported file line counts may be lower than assignment counts.
+
+This is expected behavior, not a processing failure.

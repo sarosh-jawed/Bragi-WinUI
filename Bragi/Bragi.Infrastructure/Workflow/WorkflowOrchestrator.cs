@@ -1,15 +1,19 @@
 using System.Diagnostics;
+using System.Text;
 using Bragi.Application.Configuration;
 using Bragi.Application.Contracts;
 using Bragi.Application.Workflow;
 using Bragi.Domain.Enums;
 using Bragi.Domain.Results;
+using Bragi.Infrastructure.Export;
 using Microsoft.Extensions.Logging;
 
 namespace Bragi.Infrastructure.Workflow;
 
 public sealed class WorkflowOrchestrator : IWorkflowOrchestrator
 {
+    private static readonly UTF8Encoding Utf8WithoutBom = new(encoderShouldEmitUTF8Identifier: false);
+
     private readonly ILogger<WorkflowOrchestrator> _logger;
     private readonly BragiConfig _config;
     private readonly WizardSessionStore _wizardSessionStore;
@@ -17,7 +21,7 @@ public sealed class WorkflowOrchestrator : IWorkflowOrchestrator
     private readonly ISubjectExtractionService _subjectExtractionService;
     private readonly ICategorizationService _categorizationService;
     private readonly ITextExportService _textExportService;
-
+    private readonly RunSummaryBuilder _runSummaryBuilder;
     public WorkflowOrchestrator(
         ILogger<WorkflowOrchestrator> logger,
         BragiConfig config,
@@ -25,7 +29,8 @@ public sealed class WorkflowOrchestrator : IWorkflowOrchestrator
         IInputIngestService inputIngestService,
         ISubjectExtractionService subjectExtractionService,
         ICategorizationService categorizationService,
-        ITextExportService textExportService)
+        ITextExportService textExportService,
+        RunSummaryBuilder runSummaryBuilder)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _config = config ?? throw new ArgumentNullException(nameof(config));
@@ -34,6 +39,7 @@ public sealed class WorkflowOrchestrator : IWorkflowOrchestrator
         _subjectExtractionService = subjectExtractionService ?? throw new ArgumentNullException(nameof(subjectExtractionService));
         _categorizationService = categorizationService ?? throw new ArgumentNullException(nameof(categorizationService));
         _textExportService = textExportService ?? throw new ArgumentNullException(nameof(textExportService));
+        _runSummaryBuilder = runSummaryBuilder ?? throw new ArgumentNullException(nameof(runSummaryBuilder));
     }
 
     public async Task<ExtractionResult> PreviewExtractionAsync(
@@ -193,6 +199,17 @@ public sealed class WorkflowOrchestrator : IWorkflowOrchestrator
                 extractionResult,
                 linkedCancellationTokenSource.Token);
 
+            var effectiveOutputOptions = BuildEffectiveOutputOptions();
+            var exportTimestampUtc = DateTimeOffset.UtcNow;
+
+            var exportResult = await _textExportService.ExportAsync(
+                categorizationResult,
+                exportTimestampUtc,
+                effectiveOutputOptions,
+                _config.TextTemplate,
+                _config.CategoryRules,
+                linkedCancellationTokenSource.Token);
+
             var runCompletedAtUtc = DateTimeOffset.UtcNow;
 
             var runSummary = new RunSummary(
@@ -207,33 +224,35 @@ public sealed class WorkflowOrchestrator : IWorkflowOrchestrator
                 blankOrIgnoredCount: extractionResult.BlankOrIgnoredCount,
                 duplicateCount: extractionResult.DuplicateCount,
                 parseWarningCount: extractionResult.ParseWarningCount,
-                categoryCounts: categorizationResult.CategoryCounts);
+                categoryCounts: categorizationResult.CategoryCounts,
+                exportedCategoryLineCounts: exportResult.CategoryExportLineCounts,
+                exportedUncategorizedLineCount: exportResult.UncategorizedExportLineCount,
+                exportedCategoryLineCountTotal: exportResult.TotalExportedCategoryLines,
+                outputsSorted: exportResult.OutputsSorted,
+                outputsDeduplicated: exportResult.OutputsDeduplicated);
 
-            var effectiveOutputOptions = BuildEffectiveOutputOptions();
-
-            await _textExportService.ExportAsync(
-                categorizationResult,
+            var runSummaryFilePath = await WriteRunSummaryFileAsync(
+                exportResult.OutputDirectory,
+                effectiveOutputOptions.RunSummaryFileName,
                 runSummary,
-                effectiveOutputOptions,
-                _config.TextTemplate,
-                _config.CategoryRules,
                 linkedCancellationTokenSource.Token);
 
-            var generatedFiles = BuildGeneratedFileList(
-                effectiveOutputOptions,
-                runSummary,
-                _config.CategoryRules);
+            var generatedFiles = exportResult.GeneratedFiles
+                .Append(runSummaryFilePath)
+                .ToArray();
 
             _wizardSessionStore.SetRunSummary(runSummary, generatedFiles);
 
             stopwatch.Stop();
 
             _logger.LogInformation(
-                "Completed export workflow. SourceFilePath={SourceFilePath} GeneratedFileCount={GeneratedFileCount} CategorizedAssignmentCount={CategorizedAssignmentCount} UncategorizedSubjectCount={UncategorizedSubjectCount} DurationMs={DurationMs}",
+                "Completed export workflow. SourceFilePath={SourceFilePath} GeneratedFileCount={GeneratedFileCount} CategorizedAssignmentCount={CategorizedAssignmentCount} ExportedCategoryLineTotal={ExportedCategoryLineTotal} UncategorizedSubjectCount={UncategorizedSubjectCount} ExportedUncategorizedLineCount={ExportedUncategorizedLineCount} DurationMs={DurationMs}",
                 normalizedSourceFilePath,
-                generatedFiles.Count,
+                generatedFiles.Length,
                 runSummary.CategorizedAssignmentCount,
+                runSummary.ExportedCategoryLineCountTotal,
                 runSummary.UncategorizedSubjectCount,
+                runSummary.ExportedUncategorizedLineCount,
                 stopwatch.ElapsedMilliseconds);
 
             return runSummary;
@@ -399,33 +418,6 @@ public sealed class WorkflowOrchestrator : IWorkflowOrchestrator
         };
     }
 
-    private IReadOnlyList<string> BuildGeneratedFileList(
-        Output outputOptions,
-        RunSummary runSummary,
-        IReadOnlyList<CategoryRule> categoryRules)
-    {
-        var outputDirectory = GetOutputDirectory(outputOptions, runSummary);
-
-        var orderedRules = categoryRules
-            .Where(rule => rule.Enabled)
-            .OrderBy(rule => rule.SortOrder)
-            .ThenBy(rule => rule.DisplayName, StringComparer.OrdinalIgnoreCase)
-            .ThenBy(rule => rule.Key, StringComparer.OrdinalIgnoreCase)
-            .ToArray();
-
-        var filePaths = new List<string>();
-
-        foreach (var rule in orderedRules)
-        {
-            filePaths.Add(Path.Combine(outputDirectory, rule.OutputFileName));
-        }
-
-        filePaths.Add(Path.Combine(outputDirectory, outputOptions.UncategorizedFileName));
-        filePaths.Add(Path.Combine(outputDirectory, outputOptions.RunSummaryFileName));
-
-        return filePaths;
-    }
-
     private static string GetOutputDirectory(
         Output outputOptions,
         RunSummary runSummary)
@@ -465,5 +457,31 @@ public sealed class WorkflowOrchestrator : IWorkflowOrchestrator
             Path.GetFullPath(leftPath),
             Path.GetFullPath(rightPath),
             StringComparison.OrdinalIgnoreCase);
+    }
+
+    private async Task<string> WriteRunSummaryFileAsync(
+    string outputDirectory,
+    string runSummaryFileName,
+    RunSummary runSummary,
+    CancellationToken cancellationToken)
+    {
+        var runSummaryText = _runSummaryBuilder.Build(
+            runSummary,
+            _config.TextTemplate,
+            _config.CategoryRules);
+
+        var runSummaryFilePath = Path.Combine(outputDirectory, runSummaryFileName);
+
+        await File.WriteAllTextAsync(
+            runSummaryFilePath,
+            runSummaryText,
+            Utf8WithoutBom,
+            cancellationToken);
+
+        _logger.LogInformation(
+            "Wrote run summary file {RunSummaryFilePath}.",
+            runSummaryFilePath);
+
+        return runSummaryFilePath;
     }
 }

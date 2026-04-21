@@ -19,6 +19,10 @@ This project follows a simple, human-readable changelog style inspired by Keep a
 - polished README to reflect the actual implemented Bragi workflow and release-readiness state
 - updated screenshot tracking for final release preparation
 - documented future merge-readiness and Hel-aligned architectural checkpoints
+- clarified run summary semantics by separating assignment counts from final exported unique line counts
+- polished the review completion UI state
+- unified runtime and documented log path behavior under %DOCUMENTS%\Bragi\Logs
+- updated release-facing documentation to explain summary/export semantics clearly
 
 ### Added
 - release-readiness documentation for install notes, known limitations, release notes, and architecture audit

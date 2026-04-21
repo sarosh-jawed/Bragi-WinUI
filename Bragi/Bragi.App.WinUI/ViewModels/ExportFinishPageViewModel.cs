@@ -8,10 +8,10 @@ using System.Threading.Tasks;
 using Bragi.App.WinUI.Startup;
 using Bragi.App.WinUI.ViewModels.Base;
 using Bragi.Application.Contracts;
+using Bragi.Application.Errors;
 using Bragi.Application.Workflow;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml;
-using Bragi.Application.Errors;
 
 namespace Bragi.App.WinUI.ViewModels;
 
@@ -198,6 +198,11 @@ public sealed class ExportFinishPageViewModel : ObservableObject
         builder.AppendLine($"Extracted subjects: {runSummary.ExtractedSubjectCount}");
         builder.AppendLine($"Categorized assignments: {runSummary.CategorizedAssignmentCount}");
         builder.AppendLine($"Uncategorized subjects: {runSummary.UncategorizedSubjectCount}");
+        builder.AppendLine($"Exported categorized lines: {runSummary.ExportedCategoryLineCountTotal}");
+        builder.AppendLine($"Exported uncategorized lines: {runSummary.ExportedUncategorizedLineCount}");
+        builder.AppendLine($"Outputs sorted: {runSummary.OutputsSorted.ToString().ToLowerInvariant()}");
+        builder.AppendLine($"Outputs deduplicated: {runSummary.OutputsDeduplicated.ToString().ToLowerInvariant()}");
+        builder.AppendLine("Note: exported file line counts can be lower than assignment counts because output lines are sorted and deduplicated.");
         builder.AppendLine($"Blank or ignored: {runSummary.BlankOrIgnoredCount}");
         builder.AppendLine($"Parse warnings: {runSummary.ParseWarningCount}");
         builder.AppendLine($"Duplicates: {runSummary.DuplicateCount}");

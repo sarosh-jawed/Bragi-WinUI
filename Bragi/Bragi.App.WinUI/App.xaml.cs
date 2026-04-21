@@ -26,7 +26,7 @@ public partial class App : Microsoft.UI.Xaml.Application
 {
     private Window? _mainWindow;
     private readonly ILogger<App> _logger;
-
+    private const string DefaultLogsRootToken = "%DOCUMENTS%\\Bragi\\Logs";
     public static IHost AppHost { get; } = CreateHostBuilder().Build();
 
     public static App CurrentApp =>
@@ -97,7 +97,7 @@ public partial class App : Microsoft.UI.Xaml.Application
             .UseSerilog((context, services, loggerConfiguration) =>
             {
                 var pathTokenResolver = new PathTokenResolver();
-                var logsRoot = pathTokenResolver.Resolve("%DOCUMENTS%\\Bragi\\Logs");
+                var logsRoot = pathTokenResolver.Resolve(DefaultLogsRootToken);
 
                 Directory.CreateDirectory(logsRoot);
 
@@ -140,7 +140,7 @@ public partial class App : Microsoft.UI.Xaml.Application
                 {
                     var pathTokenResolver = sp.GetRequiredService<PathTokenResolver>();
                     var config = sp.GetRequiredService<BragiConfig>();
-                    var logsRoot = pathTokenResolver.Resolve("%DOCUMENTS%\\Bragi\\Logs");
+                    var logsRoot = pathTokenResolver.Resolve(DefaultLogsRootToken);
                     return new BragiStartupContext(
                         packagedConfigPath,
                         localConfigPath,

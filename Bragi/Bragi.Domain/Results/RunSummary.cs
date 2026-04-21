@@ -18,7 +18,12 @@ public sealed record RunSummary
         int blankOrIgnoredCount,
         int duplicateCount,
         int parseWarningCount,
-        IReadOnlyDictionary<CategoryKey, int> categoryCounts)
+        IReadOnlyDictionary<CategoryKey, int> categoryCounts,
+        IReadOnlyDictionary<CategoryKey, int> exportedCategoryLineCounts,
+        int exportedUncategorizedLineCount,
+        int exportedCategoryLineCountTotal,
+        bool outputsSorted,
+        bool outputsDeduplicated)
     {
         if (string.IsNullOrWhiteSpace(sourceFile))
         {
@@ -70,14 +75,27 @@ public sealed record RunSummary
             throw new ArgumentOutOfRangeException(nameof(parseWarningCount), "Parse warning count cannot be negative.");
         }
 
-        if (categoryCounts is null)
-        {
-            throw new ArgumentNullException(nameof(categoryCounts));
-        }
+        ArgumentNullException.ThrowIfNull(categoryCounts);
+        ArgumentNullException.ThrowIfNull(exportedCategoryLineCounts);
 
         if (categoryCounts.Any(pair => pair.Value < 0))
         {
             throw new ArgumentException("Category counts cannot contain negative values.", nameof(categoryCounts));
+        }
+
+        if (exportedCategoryLineCounts.Any(pair => pair.Value < 0))
+        {
+            throw new ArgumentException("Exported category line counts cannot contain negative values.", nameof(exportedCategoryLineCounts));
+        }
+
+        if (exportedUncategorizedLineCount < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(exportedUncategorizedLineCount), "Exported uncategorized line count cannot be negative.");
+        }
+
+        if (exportedCategoryLineCountTotal < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(exportedCategoryLineCountTotal), "Exported category line count total cannot be negative.");
         }
 
         SourceFile = sourceFile.Trim();
@@ -92,6 +110,11 @@ public sealed record RunSummary
         DuplicateCount = duplicateCount;
         ParseWarningCount = parseWarningCount;
         CategoryCounts = new ReadOnlyDictionary<CategoryKey, int>(new Dictionary<CategoryKey, int>(categoryCounts));
+        ExportedCategoryLineCounts = new ReadOnlyDictionary<CategoryKey, int>(new Dictionary<CategoryKey, int>(exportedCategoryLineCounts));
+        ExportedUncategorizedLineCount = exportedUncategorizedLineCount;
+        ExportedCategoryLineCountTotal = exportedCategoryLineCountTotal;
+        OutputsSorted = outputsSorted;
+        OutputsDeduplicated = outputsDeduplicated;
     }
 
     public string SourceFile { get; }
@@ -117,6 +140,16 @@ public sealed record RunSummary
     public int ParseWarningCount { get; }
 
     public IReadOnlyDictionary<CategoryKey, int> CategoryCounts { get; }
+
+    public IReadOnlyDictionary<CategoryKey, int> ExportedCategoryLineCounts { get; }
+
+    public int ExportedUncategorizedLineCount { get; }
+
+    public int ExportedCategoryLineCountTotal { get; }
+
+    public bool OutputsSorted { get; }
+
+    public bool OutputsDeduplicated { get; }
 
     public TimeSpan Duration => RunCompletedAtUtc - RunStartedAtUtc;
 }

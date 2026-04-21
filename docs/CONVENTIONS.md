@@ -123,8 +123,7 @@ Preferred logging stack:
 - `ILogger<T>`
 - Serilog file sink
 
-Planned log root:
-- `%LOCALAPPDATA%\Bragi\Logs`
+Logs are written to %DOCUMENTS%\Bragi\Logs.
 
 Logging rules:
 - log major workflow steps
@@ -148,8 +147,11 @@ At minimum, later implementation should log:
 
 ## 7. Output Folder Strategy
 
-Default output root:
-- `%LOCALAPPDATA%\Bragi\Output\YYYY-MM`
+## Output path behavior
+
+The configuration model still contains an output root path for compatibility and future non-UI use.
+
+However, the current desktop UI does not silently export to a default folder. The user must explicitly choose an output folder before export.
 
 Rules:
 - outputs should be deterministic

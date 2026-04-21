@@ -187,9 +187,17 @@ public sealed class WizardSessionStoreTests
             blankOrIgnoredCount: 0,
             duplicateCount: 0,
             parseWarningCount: 0,
-            new Dictionary<CategoryKey, int>
+            categoryCounts: new Dictionary<CategoryKey, int>
             {
                 [new CategoryKey("art")] = 1
-            });
+            },
+            exportedCategoryLineCounts: new Dictionary<CategoryKey, int>
+            {
+                [new CategoryKey("art")] = 1
+            },
+            exportedUncategorizedLineCount: 0,
+            exportedCategoryLineCountTotal: 1,
+            outputsSorted: true,
+            outputsDeduplicated: true);
     }
 }
