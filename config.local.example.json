@@ -1,0 +1,22 @@
+{
+  "Bragi": {
+    "Output": {
+      "RootPath": "%LOCALAPPDATA%\\Bragi\\Output"
+    },
+    "CsvColumns": {
+      "SubjectColumnName": "instance.subjects",
+      "TitleColumnName": "instance.title",
+      "RecordIdColumnName": "instance.id",
+      "SubjectColumnContainsJsonArray": true
+    },
+    "BehaviorOptions": {
+      "AllowMultiMatch": true,
+      "SortOutputs": true,
+      "DeduplicateOutputs": true,
+      "IgnoreBlankSubjects": true,
+      "CaseInsensitiveMatching": true,
+      "NormalizeWhitespace": true,
+      "TrimSubjects": true
+    }
+  }
+}

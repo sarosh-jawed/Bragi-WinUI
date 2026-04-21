@@ -1,0 +1,88 @@
+name: ci
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - "v*"
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build-test:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore
+        run: dotnet restore Bragi/Bragi.sln
+
+      - name: Build
+        run: dotnet build Bragi/Bragi.sln -c Release -p:Platform=x64 --no-restore
+
+      - name: Test
+        run: dotnet test Bragi/Bragi.Tests/Bragi.Tests.csproj -c Release --no-build
+
+  package-zip-on-tags:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build-test
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore
+        run: dotnet restore Bragi/Bragi.sln
+
+      - name: Publish win-x64 folder build
+        run: dotnet publish Bragi/Bragi.App.WinUI/Bragi.App.WinUI.csproj -c Release -p:Platform=x64 -p:PublishProfile=win-x64.pubxml
+
+      - name: Create zip artifact folder
+        shell: pwsh
+        run: |
+          $version = "${{ github.ref_name }}"
+          $publishRoot = "artifacts/publish/win-x64"
+          $releaseRoot = "artifacts/release"
+          $zipName = "Bragi-$version-win-x64.zip"
+
+          New-Item -ItemType Directory -Force -Path $releaseRoot | Out-Null
+          Compress-Archive -Path "$publishRoot\*" -DestinationPath "$releaseRoot\$zipName" -Force
+
+      - name: Create SHA256SUMS
+        shell: pwsh
+        run: |
+          $releaseRoot = "artifacts/release"
+          $hashFile = Join-Path $releaseRoot "SHA256SUMS.txt"
+          $artifacts = Get-ChildItem $releaseRoot -File
+
+          $lines = foreach ($artifact in $artifacts) {
+            $hash = Get-FileHash $artifact.FullName -Algorithm SHA256
+            "{0}  {1}" -f $hash.Hash.ToLowerInvariant(), $artifact.Name
+          }
+
+          Set-Content -Path $hashFile -Value $lines -Encoding UTF8
+
+      - name: Upload release-prep artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: bragi-release-prep
+          path: artifacts/release/
+
+# Public MSIX publishing is intentionally deferred until the final release cut
+# because the package identity and signing certificate must be finalized first.

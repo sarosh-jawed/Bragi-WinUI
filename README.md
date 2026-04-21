@@ -4,120 +4,112 @@ Modern WinUI 3 desktop application for configurable library subject categorizati
 
 ## Overview
 
-Bragi-WinUI is the modernized desktop version of Bragi.
+Bragi-WinUI is the modern desktop rebuild of the legacy Bragi tool.
 
-The application will preserve the practical behavior of the legacy Bragi tool while replacing the old hard-coded Windows Forms implementation with a cleaner, more maintainable WinUI 3 architecture.
+The application preserves the practical workflow of the original tool while replacing the old hard-coded implementation with a cleaner WinUI 3 architecture that is easier to maintain, test, and release.
 
-Bragi is being rebuilt as a professional desktop application with:
+Bragi now supports:
+
 - configuration-driven categorization rules
-- clearer workflow and review steps
+- plain text and CSV input
+- guided review, preview, and export workflow
 - structured logging
-- predictable export behavior
-- testable service boundaries
-- clean project architecture aligned with Hel standards
+- friendly user-facing error handling
+- deterministic export behavior
+- automated regression coverage
+- release-readiness documentation and CI scaffolding
 
 ## What Bragi Does
 
-Bragi processes subject data and routes each extracted subject into discipline-specific output files.
+Bragi processes extracted subject data and routes subjects into discipline-specific output files.
 
-The modernized application is intended to:
+The application can:
+
 - load a plain text file with one subject per line
 - load a CSV file and extract subjects from a configured column such as `instance.subjects`
-- normalize subject values safely
-- categorize subjects using configuration, not hard-coded processor logic
-- preserve legacy-compatible output file names
-- generate uncategorized output and a run summary
-- provide review, preview, and export steps in a guided desktop workflow
+- normalize and deduplicate extracted subjects
+- categorize subjects using configuration rather than hard-coded processor logic
+- generate one text file per configured category
+- generate `NotCategorizedSubjects.txt`
+- generate `RunSummary.txt`
+- provide review and preview steps before export
+- export to a user-selected output folder
 
-## Planned Inputs
+## Current Input Model
 
-Bragi will support these input types:
+Default CSV configuration:
 
-1. Plain text
-   - one subject per line
+- subject column: `instance.subjects`
+- title column: `instance.title`
+- record ID column: `instance.id`
 
-2. CSV
-   - subjects extracted from a configured column
-   - default legacy-friendly support for `instance.subjects`
-   - support for subject arrays stored as text inside CSV cells
+The app can capture title and record ID metadata internally for preview and troubleshooting, while the exported category files currently write subject text only.
 
-## Planned Outputs
+## Current Output Model
 
-Bragi will generate:
-- one text file per configured category
+Bragi currently produces:
+
+- one text file per enabled category
 - `NotCategorizedSubjects.txt`
 - `RunSummary.txt`
 
-Operationally, the application is also expected to support:
-- output folder opening
-- log folder opening
-- review and preview before export
+Current category output behavior:
 
-## Planned Architecture
+- output lines contain the original extracted subject text
+- output is sorted
+- output is deduplicated
+- uncategorized subjects are preserved in a separate file
 
-This repository follows a clean multi-project desktop architecture.
+This output format has been confirmed as acceptable for the current project stage.
 
-Planned solution and project names:
-- `Bragi`
+## Workflow
+
+Bragi uses a guided five-step workflow:
+
+1. **Start**
+2. **Load Input**
+3. **Review Subjects**
+4. **Preview Results**
+5. **Export & Finish**
+
+## Solution Structure
+
+The solution follows a layered desktop architecture:
+
 - `Bragi.Domain`
 - `Bragi.Application`
 - `Bragi.Infrastructure`
 - `Bragi.App.WinUI`
 - `Bragi.Tests`
 
-Planned responsibility split:
-- `Bragi.Domain` - core records, enums, value objects, run results
-- `Bragi.Application` - contracts, configuration models, workflow state
-- `Bragi.Infrastructure` - ingest, extraction, categorization, export, config, logging helpers
-- `Bragi.App.WinUI` - WinUI 3 desktop shell and workflow pages
-- `Bragi.Tests` - xUnit tests, fixtures, regression coverage
+Responsibility split:
 
-## Repository Status
+- `Bragi.Domain` - core records, enums, value objects, result models
+- `Bragi.Application` - contracts, config models, workflow state, user-facing abstractions
+- `Bragi.Infrastructure` - config loading, input ingest, extraction, categorization, export, path resolution
+- `Bragi.App.WinUI` - shell, pages, view models, navigation, user interaction
+- `Bragi.Tests` - xUnit automated coverage and regression tests
 
-Current status:
-- Phase 0 completed
-- Phase 1 baseline and standards in progress
-- implementation code has intentionally not started yet
+## Current Status
 
-Important rule:
-This repository is a clean reset. The old Bragi repository is used only as:
-- behavior reference
-- comparison point
-- regression reference
+Implemented through Phase 15:
 
-## Planned Operational Defaults
+- guided WinUI 3 shell and workflow pages
+- CSV and plain text input ingestion
+- subject extraction
+- configuration-driven categorization
+- export generation
+- structured logging
+- cancellation-safe workflow execution
+- automated regression coverage
+- conservative keyword coverage improvements validated against the original library CSV
+- preview and review performance improvements for larger CSV files
 
-Default operational paths are expected to follow this pattern:
-- logs: `%LOCALAPPDATA%\Bragi\Logs`
-- default outputs: `%LOCALAPPDATA%\Bragi\Output\YYYY-MM`
+## Build and Test
 
-Configuration loading is planned to support:
-- packaged `config.json`
-- optional local override at `%LOCALAPPDATA%\Bragi\config.local.json`
+From repo root:
 
-## Release and Install Notes
-
-Release packaging will be added in later phases.
-
-Planned release artifacts:
-- MSIX package
-- ZIP release bundle
-- checksums
-- install notes
-- example local configuration file
-
-This section will be updated once build, packaging, and release automation are implemented.
-
-## Development Principles
-
-Before coding starts, this repository follows these standards:
-- no core business logic in UI code-behind
-- no hard-coded category rules in processor classes
-- no reverse project references
-- no direct file I/O from UI pages
-- main branch stays stable
-- work is performed in phase-based feature branches
-
-## License
-
-This repository uses the MIT License.
+```powershell
+dotnet restore Bragi/Bragi.sln
+dotnet build Bragi/Bragi.sln -c Debug -p:Platform=x64
+dotnet test Bragi/Bragi.Tests/Bragi.Tests.csproj -c Debug

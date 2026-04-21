@@ -1,71 +1,66 @@
 # Bragi Screenshot Tracker
 
-This document tracks the screenshots that will be added to the repository as the project progresses.
-
-At Phase 1, screenshots are not required yet, but the placeholders are created now so documentation remains organized from the start.
+This document tracks the release-quality screenshots that should exist before the final packaging and GitHub release cut.
 
 ---
 
-## Planned Screenshot Areas
-
-### Repository
-- GitHub repository home page
-- release page
-- documentation overview
+## Required Release Screenshots
 
 ### Application Shell
 - main shell window
-- sidebar stepper
-- footer navigation
-- busy state
+- sidebar navigation
+- footer navigation state
 
 ### Workflow Pages
-- Start page
-- Load Input page
-- Review Subjects page
-- Preview Results page
-- Export and Finish page
+- start page
+- load input page
+- review subjects page
+- preview results page
+- export and finish page
 
-### Operational Views
-- warning InfoBar example
+### Operational States
+- busy/loading state
 - successful export confirmation
-- preview grid example
 - generated output folder example
 - log folder example
+
+### Repository / Release
+- polished GitHub repository home page
+- release page once v1.0.0 is cut
 
 ---
 
 ## Naming Convention
 
-Use clear, stable names with phase awareness.
+Use stable lowercase names with hyphen separators.
 
-Recommended file naming pattern:
-- `phase-01-repo-home.png`
-- `phase-02-solution-structure.png`
-- `phase-11-shell-main-window.png`
-- `phase-12-load-input-page.png`
-- `phase-12-preview-results-page.png`
-- `phase-12-export-finish-page.png`
+Recommended names:
 
-Rules:
-- use lowercase file names
-- use hyphen-separated names
-- keep names descriptive
-- avoid spaces in file names
+- `phase-16-shell-main-window.png`
+- `phase-16-start-page.png`
+- `phase-16-load-input-page.png`
+- `phase-16-review-subjects-page.png`
+- `phase-16-preview-results-page.png`
+- `phase-16-export-finish-page.png`
+- `phase-16-busy-state.png`
+- `phase-16-successful-export.png`
+- `phase-16-output-folder.png`
+- `phase-16-log-folder.png`
+- `phase-16-github-home.png`
+- `phase-16-github-release.png`
 
 ---
 
-## Storage Plan
+## Storage Location
 
-Planned screenshot storage:
+Store screenshots in:
+
 - `docs/screenshots/`
-
-This folder will be added when the first screenshots are captured.
 
 ---
 
 ## Current Status
 
-No screenshots captured yet.
+Release-quality screenshot capture is intentionally deferred until the final packaging and release cut.
 
-This file exists to keep future documentation structured and professional.
+The tracker is now ready and stable.
