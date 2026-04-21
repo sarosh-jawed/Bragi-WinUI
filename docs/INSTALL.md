@@ -47,8 +47,10 @@ Current operational behavior:
 
 - the app reads packaged `config.json`
 - local configuration override may later be supported via `%LOCALAPPDATA%\Bragi\config.local.json`
-- log files are written under the local Bragi logs path
-- exported output requires an explicit user-selected output folder
+- Logs are written to %DOCUMENTS%\Bragi\Logs.
+- run summary reporting includes assignment metrics and final exported file metrics
+- category files currently contain subject text only
+- the user must explicitly choose an output folder before export
 
 ## Troubleshooting
 
@@ -58,6 +60,7 @@ If Bragi cannot complete export:
 - verify the CSV input file is readable
 - check the log folder for technical details
 - confirm the CSV structure matches the configured subject column expectations
+- assignment counts and exported file line counts may differ because exported category files are sorted and deduplicated
 
 ## Current Status
 

@@ -62,6 +62,8 @@ Current category output behavior:
 
 This output format has been confirmed as acceptable for the current project stage.
 
+RunSummary.txt reports categorization assignment counts. Exported category files are sorted and deduplicated unique subject outputs, so file line counts may be lower than assignment counts.
+
 ## Workflow
 
 Bragi uses a guided five-step workflow:

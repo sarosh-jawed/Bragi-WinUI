@@ -74,6 +74,11 @@ public sealed class ReviewSubjectsPageViewModel : ObservableObject
 
     public bool HasExtraction => ExtractedSubjectCount > 0;
 
+    public bool CanMarkReviewComplete => HasExtraction && !IsReviewComplete;
+
+    public string ReviewCompletionButtonText =>
+        IsReviewComplete ? "Review Completed" : "Mark Review Complete";
+
     public string PreviewWindowText =>
         HasExtraction
             ? $"Showing the first {Subjects.Count} extracted subjects."
@@ -84,6 +89,12 @@ public sealed class ReviewSubjectsPageViewModel : ObservableObject
         if (_wizardSessionStore.ExtractedSubjects is null)
         {
             StatusMessage = "Load input before marking subject review complete.";
+            return;
+        }
+
+        if (IsReviewComplete)
+        {
+            StatusMessage = "Subject review is already complete.";
             return;
         }
 
@@ -118,19 +129,29 @@ public sealed class ReviewSubjectsPageViewModel : ObservableObject
                     subject.Entry.SourceRecordId));
             }
 
-            if (!IsReviewComplete)
-            {
-                StatusMessage = "Review the extracted subjects, then mark the review complete.";
-            }
+            StatusMessage = IsReviewComplete
+                ? "Subject review marked complete. Continue to Preview Results."
+                : "Review the extracted subjects, then mark the review complete.";
+        }
+        else
+        {
+            StatusMessage = "Load input first to review extracted subjects.";
         }
 
-        OnPropertyChanged(nameof(HasExtraction));
-        OnPropertyChanged(nameof(PreviewWindowText));
+        RaiseComputedPropertyChanges();
     }
 
     private void OnSessionChanged(object? sender, EventArgs e)
     {
         RefreshFromSession();
+    }
+
+    private void RaiseComputedPropertyChanges()
+    {
+        OnPropertyChanged(nameof(HasExtraction));
+        OnPropertyChanged(nameof(CanMarkReviewComplete));
+        OnPropertyChanged(nameof(ReviewCompletionButtonText));
+        OnPropertyChanged(nameof(PreviewWindowText));
     }
 
     public sealed record ReviewSubjectItem(

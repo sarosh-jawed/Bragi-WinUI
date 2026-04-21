@@ -23,7 +23,8 @@
 
           <StackPanel Orientation="Horizontal" Spacing="12">
             <Button
-                            Content="Mark Review Complete"
+                            Content="{x:Bind ViewModel.ReviewCompletionButtonText, Mode=OneWay}"
+                            IsEnabled="{x:Bind ViewModel.CanMarkReviewComplete, Mode=OneWay}"
                             Click="MarkReviewCompleteButton_OnClick"
                             MinWidth="180" />
           </StackPanel>

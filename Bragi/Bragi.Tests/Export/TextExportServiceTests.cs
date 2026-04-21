@@ -12,7 +12,7 @@ namespace Bragi.Tests.Export;
 public sealed class TextExportServiceTests
 {
     [Fact]
-    public async Task ExportAsync_GeneratesDeterministicFiles_AndWritesUtf8WithoutBom()
+    public async Task ExportAsync_GeneratesDeterministicFiles_AndReturnsFinalExportFacts()
     {
         var tempRoot = Path.Combine(Path.GetTempPath(), $"bragi-export-{Guid.NewGuid():N}");
 
@@ -32,7 +32,6 @@ public sealed class TextExportServiceTests
             var service = new TextExportService(
                 NullLogger<TextExportService>.Instance,
                 new TextBodyBuilder(),
-                new RunSummaryBuilder(),
                 config);
 
             var categoryRules = new[]
@@ -63,24 +62,6 @@ public sealed class TextExportServiceTests
                     [new CategoryKey("business")] = 0
                 });
 
-            var runSummary = new RunSummary(
-                sourceFile: @"C:\Input\subjects.csv",
-                inputFileKind: InputFileKind.Csv,
-                runStartedAtUtc: new DateTimeOffset(2026, 4, 1, 12, 0, 0, TimeSpan.Zero),
-                runCompletedAtUtc: new DateTimeOffset(2026, 4, 1, 12, 5, 0, TimeSpan.Zero),
-                totalRecordsRead: 3,
-                extractedSubjectCount: 3,
-                categorizedAssignmentCount: 2,
-                uncategorizedSubjectCount: 1,
-                blankOrIgnoredCount: 0,
-                duplicateCount: 1,
-                parseWarningCount: 0,
-                categoryCounts: new Dictionary<CategoryKey, int>
-                {
-                    [new CategoryKey("art")] = 2,
-                    [new CategoryKey("business")] = 0
-                });
-
             var outputOptions = new Output
             {
                 RootPath = tempRoot,
@@ -91,9 +72,9 @@ public sealed class TextExportServiceTests
 
             var textTemplate = new TextTemplate();
 
-            await service.ExportAsync(
+            var exportResult = await service.ExportAsync(
                 categorizationResult,
-                runSummary,
+                new DateTimeOffset(2026, 4, 1, 12, 5, 0, TimeSpan.Zero),
                 outputOptions,
                 textTemplate,
                 categoryRules);
@@ -101,31 +82,35 @@ public sealed class TextExportServiceTests
             var artFilePath = Path.Combine(tempRoot, "ArtSubjects.txt");
             var businessFilePath = Path.Combine(tempRoot, "BusinessSubjects.txt");
             var uncategorizedFilePath = Path.Combine(tempRoot, "NotCategorizedSubjects.txt");
-            var runSummaryFilePath = Path.Combine(tempRoot, "RunSummary.txt");
 
             Assert.True(File.Exists(artFilePath));
             Assert.True(File.Exists(businessFilePath));
             Assert.True(File.Exists(uncategorizedFilePath));
-            Assert.True(File.Exists(runSummaryFilePath));
 
             var artFileContent = await File.ReadAllTextAsync(artFilePath);
             var businessFileContent = await File.ReadAllTextAsync(businessFilePath);
             var uncategorizedFileContent = await File.ReadAllTextAsync(uncategorizedFilePath);
-            var runSummaryContent = await File.ReadAllTextAsync(runSummaryFilePath);
 
             Assert.Equal("Art", artFileContent);
             Assert.Equal(string.Empty, businessFileContent);
             Assert.Equal("Unknown topic", uncategorizedFileContent);
 
-            Assert.Contains("Input file name: subjects.csv", runSummaryContent);
-            Assert.Contains("Total extracted subjects: 3", runSummaryContent);
-            Assert.Contains("Total categorized assignments: 2", runSummaryContent);
-            Assert.Contains("Total uncategorized subjects: 1", runSummaryContent);
-            Assert.Contains("Blank/ignored count: 0", runSummaryContent);
-            Assert.Contains("Parse warning count: 0", runSummaryContent);
-            Assert.Contains("Duplicate count: 1", runSummaryContent);
-            Assert.Contains("art: 2", runSummaryContent);
-            Assert.Contains("business: 0", runSummaryContent);
+            Assert.Equal(tempRoot, exportResult.OutputDirectory);
+            Assert.Equal(3, exportResult.GeneratedFiles.Count);
+            Assert.Contains(artFilePath, exportResult.GeneratedFiles);
+            Assert.Contains(businessFilePath, exportResult.GeneratedFiles);
+            Assert.Contains(uncategorizedFilePath, exportResult.GeneratedFiles);
+
+            Assert.True(exportResult.CategoryExportLineCounts.TryGetValue(new CategoryKey("art"), out var artLineCount));
+            Assert.Equal(1, artLineCount);
+
+            Assert.True(exportResult.CategoryExportLineCounts.TryGetValue(new CategoryKey("business"), out var businessLineCount));
+            Assert.Equal(0, businessLineCount);
+
+            Assert.Equal(1, exportResult.UncategorizedExportLineCount);
+            Assert.Equal(1, exportResult.TotalExportedCategoryLines);
+            Assert.True(exportResult.OutputsSorted);
+            Assert.True(exportResult.OutputsDeduplicated);
 
             var artFileBytes = await File.ReadAllBytesAsync(artFilePath);
             var utf8Bom = Encoding.UTF8.GetPreamble();

@@ -29,6 +29,8 @@ Current release behavior exports:
 - subject lines only in category files
 - uncategorized subject output in `NotCategorizedSubjects.txt`
 - run-level metrics in `RunSummary.txt`
+- category files are sorted and deduplicated
+- RunSummary.txt contains both assignment metrics and export summary metrics
 
 ## Validation
 
@@ -47,3 +49,4 @@ See `docs/KNOWN-LIMITATIONS.md`.
 ## Notes
 
 Later refinement may expand categorization quality using more formal library-controlled reference logic, but that work is outside the scope of this release-ready baseline.
+Logs are written to %DOCUMENTS%\Bragi\Logs.

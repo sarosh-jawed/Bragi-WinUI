@@ -87,7 +87,6 @@ public sealed class DummyCsvRegressionTests
             var exportService = new TextExportService(
                 NullLogger<TextExportService>.Instance,
                 new TextBodyBuilder(),
-                new RunSummaryBuilder(),
                 config);
 
             var rows = await inputIngestService.ReadCsvRowsAsync(fixturePath);
@@ -104,20 +103,18 @@ public sealed class DummyCsvRegressionTests
                 config.CategoryRules,
                 config.BehaviorOptions);
 
-            var runSummary = BuildRunSummary(extractionResult, categorizationResult);
-
             var outputOptions = config.Output with
             {
                 RootPath = tempOutputRoot,
                 CreateMonthlySubfolder = false
             };
 
-            await exportService.ExportAsync(
-                categorizationResult,
-                runSummary,
-                outputOptions,
-                config.TextTemplate,
-                config.CategoryRules);
+            var exportResult = await exportService.ExportAsync(
+                            categorizationResult,
+                            new DateTimeOffset(2026, 4, 1, 12, 0, 1, TimeSpan.Zero),
+                            outputOptions,
+                            config.TextTemplate,
+                            config.CategoryRules);
 
             var enabledRules = config.CategoryRules.Where(rule => rule.Enabled).ToArray();
 
@@ -128,15 +125,12 @@ public sealed class DummyCsvRegressionTests
             }
 
             var uncategorizedPath = Path.Combine(tempOutputRoot, outputOptions.UncategorizedFileName);
-            var runSummaryPath = Path.Combine(tempOutputRoot, outputOptions.RunSummaryFileName);
 
             Assert.True(File.Exists(uncategorizedPath));
-            Assert.True(File.Exists(runSummaryPath));
-
-            var runSummaryText = await File.ReadAllTextAsync(runSummaryPath);
-            Assert.Contains("Total extracted subjects: 80", runSummaryText);
-            Assert.Contains("Total categorized assignments: 77", runSummaryText);
-            Assert.Contains("Total uncategorized subjects: 6", runSummaryText);
+            Assert.True(exportResult.GeneratedFiles.Count >= enabledRules.Length + 1);
+            Assert.Equal(exportResult.TotalExportedCategoryLines, exportResult.CategoryExportLineCounts.Values.Sum());
+            Assert.True(exportResult.OutputsSorted);
+            Assert.True(exportResult.OutputsDeduplicated);
         }
         finally
         {
@@ -145,28 +139,6 @@ public sealed class DummyCsvRegressionTests
                 Directory.Delete(tempOutputRoot, recursive: true);
             }
         }
-    }
-
-    private static RunSummary BuildRunSummary(
-        ExtractionResult extractionResult,
-        CategorizationResult categorizationResult)
-    {
-        var startedAt = new DateTimeOffset(2026, 4, 1, 12, 0, 0, TimeSpan.Zero);
-        var completedAt = startedAt.AddSeconds(1);
-
-        return new RunSummary(
-            extractionResult.SourceFile,
-            extractionResult.InputFileKind,
-            startedAt,
-            completedAt,
-            extractionResult.TotalRecordsRead,
-            extractionResult.ExtractedCount,
-            categorizationResult.TotalAssignments,
-            categorizationResult.UncategorizedSubjectCount,
-            extractionResult.BlankOrIgnoredCount,
-            extractionResult.DuplicateCount,
-            extractionResult.ParseWarningCount,
-            categorizationResult.CategoryCounts);
     }
 
     private static BragiConfig LoadActualAppConfig()

@@ -2,6 +2,7 @@ using System.Text;
 using Bragi.Application.Configuration;
 using Bragi.Application.Contracts;
 using Bragi.Domain.Results;
+using Bragi.Domain.ValueObjects;
 using Microsoft.Extensions.Logging;
 
 namespace Bragi.Infrastructure.Export;
@@ -12,36 +13,32 @@ public sealed class TextExportService : ITextExportService
 
     private readonly ILogger<TextExportService> _logger;
     private readonly TextBodyBuilder _textBodyBuilder;
-    private readonly RunSummaryBuilder _runSummaryBuilder;
     private readonly BragiConfig _config;
 
     public TextExportService(
         ILogger<TextExportService> logger,
         TextBodyBuilder textBodyBuilder,
-        RunSummaryBuilder runSummaryBuilder,
         BragiConfig config)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _textBodyBuilder = textBodyBuilder ?? throw new ArgumentNullException(nameof(textBodyBuilder));
-        _runSummaryBuilder = runSummaryBuilder ?? throw new ArgumentNullException(nameof(runSummaryBuilder));
         _config = config ?? throw new ArgumentNullException(nameof(config));
     }
 
-    public async Task ExportAsync(
+    public async Task<ExportResult> ExportAsync(
         CategorizationResult categorizationResult,
-        RunSummary runSummary,
+        DateTimeOffset exportTimestampUtc,
         Output outputOptions,
         TextTemplate textTemplate,
         IReadOnlyList<CategoryRule> categoryRules,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(categorizationResult);
-        ArgumentNullException.ThrowIfNull(runSummary);
         ArgumentNullException.ThrowIfNull(outputOptions);
         ArgumentNullException.ThrowIfNull(textTemplate);
         ArgumentNullException.ThrowIfNull(categoryRules);
 
-        var outputDirectory = GetOutputDirectory(outputOptions, runSummary);
+        var outputDirectory = GetOutputDirectory(outputOptions, exportTimestampUtc);
         Directory.CreateDirectory(outputDirectory);
 
         var orderedRules = categoryRules
@@ -56,6 +53,9 @@ public sealed class TextExportService : ITextExportService
             outputDirectory,
             orderedRules.Length);
 
+        var generatedFiles = new List<string>();
+        var categoryExportLineCounts = new Dictionary<CategoryKey, int>();
+
         foreach (var categoryRule in orderedRules)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -69,6 +69,9 @@ public sealed class TextExportService : ITextExportService
             var categoryFilePath = Path.Combine(outputDirectory, categoryRule.OutputFileName);
 
             await WriteLinesAsync(categoryFilePath, categoryLines, cancellationToken);
+
+            generatedFiles.Add(categoryFilePath);
+            categoryExportLineCounts[new CategoryKey(categoryRule.Key)] = categoryLines.Count;
 
             _logger.LogInformation(
                 "Wrote category file {CategoryFilePath} with {LineCount} lines.",
@@ -85,38 +88,34 @@ public sealed class TextExportService : ITextExportService
 
         await WriteLinesAsync(uncategorizedFilePath, uncategorizedLines, cancellationToken);
 
+        generatedFiles.Add(uncategorizedFilePath);
+
         _logger.LogInformation(
             "Wrote uncategorized file {UncategorizedFilePath} with {LineCount} lines.",
             uncategorizedFilePath,
             uncategorizedLines.Count);
 
-        var runSummaryText = _runSummaryBuilder.Build(
-            runSummary,
-            textTemplate,
-            orderedRules);
-
-        var runSummaryFilePath = Path.Combine(outputDirectory, outputOptions.RunSummaryFileName);
-
-        await File.WriteAllTextAsync(
-            runSummaryFilePath,
-            runSummaryText,
-            Utf8WithoutBom,
-            cancellationToken);
-
-        _logger.LogInformation(
-            "Wrote run summary file {RunSummaryFilePath}.",
-            runSummaryFilePath);
+        var exportResult = new ExportResult(
+            outputDirectory: outputDirectory,
+            generatedFiles: generatedFiles,
+            categoryExportLineCounts: categoryExportLineCounts,
+            uncategorizedExportLineCount: uncategorizedLines.Count,
+            totalExportedCategoryLines: categoryExportLineCounts.Values.Sum(),
+            outputsSorted: _config.BehaviorOptions.SortOutputs,
+            outputsDeduplicated: _config.BehaviorOptions.DeduplicateOutputs);
 
         _logger.LogInformation(
             "Completed export stage. OutputDirectory={OutputDirectory} GeneratedCategoryFileCount={GeneratedCategoryFileCount} UncategorizedLineCount={UncategorizedLineCount}",
             outputDirectory,
             orderedRules.Length,
             uncategorizedLines.Count);
+
+        return exportResult;
     }
 
     private static string GetOutputDirectory(
         Output outputOptions,
-        RunSummary runSummary)
+        DateTimeOffset exportTimestampUtc)
     {
         var rootPath = outputOptions.RootPath.Trim();
 
@@ -125,7 +124,7 @@ public sealed class TextExportService : ITextExportService
             return rootPath;
         }
 
-        var monthlyFolderName = runSummary.RunCompletedAtUtc.ToString(outputOptions.MonthlySubfolderFormat);
+        var monthlyFolderName = exportTimestampUtc.ToString(outputOptions.MonthlySubfolderFormat);
 
         return Path.Combine(rootPath, monthlyFolderName);
     }

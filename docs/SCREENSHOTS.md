@@ -15,14 +15,19 @@ This document tracks the release-quality screenshots that should exist before th
 - start page
 - load input page
 - review subjects page
+- review completed state
 - preview results page
+- preview page with clarified counts if visible
 - export and finish page
+- export page with generated files
+- final run summary snippet if relevant
 
 ### Operational States
-- busy/loading state
 - successful export confirmation
 - generated output folder example
 - log folder example
+
+Busy/loading state is optional and may be omitted if it is difficult to capture cleanly.
 
 ### Repository / Release
 - polished GitHub repository home page
@@ -36,18 +41,21 @@ Use stable lowercase names with hyphen separators.
 
 Recommended names:
 
-- `phase-16-shell-main-window.png`
-- `phase-16-start-page.png`
-- `phase-16-load-input-page.png`
-- `phase-16-review-subjects-page.png`
-- `phase-16-preview-results-page.png`
-- `phase-16-export-finish-page.png`
-- `phase-16-busy-state.png`
-- `phase-16-successful-export.png`
-- `phase-16-output-folder.png`
-- `phase-16-log-folder.png`
-- `phase-16-github-home.png`
-- `phase-16-github-release.png`
+- `shell-main-window.png`
+- `start-page.png`
+- `load-input-page.png`
+- `review-subjects-page.png`
+- `review-completed-state.png`
+- `preview-results-page.png`
+- `preview-clarified-counts.png`
+- `export-finish-page.png`
+- `export-generated-files.png`
+- `run-summary-snippet.png`
+- `successful-export.png`
+- `output-folder.png`
+- `log-folder.png`
+- `github-home.png`
+- `github-release.png`
 
 ---
 
@@ -61,6 +69,8 @@ Store screenshots in:
 
 ## Current Status
 
-Release-quality screenshot capture is intentionally deferred until the final packaging and release cut.
+Application workflow and QA screenshots have now been captured in `docs/screenshots/` for the final pre-packaging validation pass.
 
-The tracker is now ready and stable.
+Still deferred until final release publication:
+- polished GitHub repository home page screenshot
+- GitHub release page screenshot once `v1.0.0` is cut

@@ -5,9 +5,9 @@ namespace Bragi.Application.Contracts;
 
 public interface ITextExportService
 {
-    Task ExportAsync(
+    Task<ExportResult> ExportAsync(
         CategorizationResult categorizationResult,
-        RunSummary runSummary,
+        DateTimeOffset exportTimestampUtc,
         Output outputOptions,
         TextTemplate textTemplate,
         IReadOnlyList<CategoryRule> categoryRules,
