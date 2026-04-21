@@ -418,20 +418,6 @@ public sealed class WorkflowOrchestrator : IWorkflowOrchestrator
         };
     }
 
-    private static string GetOutputDirectory(
-        Output outputOptions,
-        RunSummary runSummary)
-    {
-        if (!outputOptions.CreateMonthlySubfolder)
-        {
-            return outputOptions.RootPath;
-        }
-
-        var monthlyFolderName = runSummary.RunCompletedAtUtc.ToString(outputOptions.MonthlySubfolderFormat);
-
-        return Path.Combine(outputOptions.RootPath, monthlyFolderName);
-    }
-
     private CancellationTokenSource BeginBusyOperation(CancellationToken cancellationToken)
     {
         var linkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
