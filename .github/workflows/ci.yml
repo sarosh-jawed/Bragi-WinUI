@@ -51,8 +51,7 @@ jobs:
         run: dotnet restore Bragi/Bragi.sln
 
       - name: Publish win-x64 folder build
-        run: dotnet publish Bragi/Bragi.App.WinUI/Bragi.App.WinUI.csproj -c Release -p:Platform=x64 -p:PublishProfile=win-x64.pubxml -p:PublishDir="${{ github.workspace }}\artifacts\publish\win-x64\"
-
+        run: dotnet publish Bragi/Bragi.App.WinUI/Bragi.App.WinUI.csproj -c Release -p:Platform=x64 -p:PublishProfile=win-x64.pubxml -p:PublishDir="${{ github.workspace }}\artifacts\publish\win-x64\" -p:WindowsAppSDKSelfContained=true -p:WindowsPackageType=None
       - name: Create zip artifact folder
         shell: pwsh
         run: |

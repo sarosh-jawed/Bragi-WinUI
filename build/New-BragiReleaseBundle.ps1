@@ -9,7 +9,10 @@ param(
     [string]$MsixPath,
 
     [Parameter(Mandatory = $false)]
-    [string]$OutputRoot = "artifacts\release"
+    [string]$OutputRoot = "artifacts\release",
+
+    [Parameter(Mandatory = $false)]
+    [string]$ReleaseNotesPath
 )
 
 $ErrorActionPreference = "Stop"
@@ -39,6 +42,10 @@ Write-Host "Preparing Bragi release bundle for version $Version..."
 
 Assert-PathExists -Path $PublishedFolder -Label "Published folder"
 
+if ([string]::IsNullOrWhiteSpace($ReleaseNotesPath)) {
+    $ReleaseNotesPath = "docs\RELEASE-NOTES-v$Version.md"
+}
+
 $releaseRoot = Resolve-Path "."
 $bundleRoot = Join-Path $releaseRoot $OutputRoot
 New-CleanDirectory -Path $bundleRoot
@@ -65,7 +72,8 @@ else {
 Write-Host "Copying supporting release files..."
 Copy-Item -Path "config.local.example.json" -Destination (Join-Path $bundleRoot "config.local.example.json") -Force
 Copy-Item -Path "docs\INSTALL.md" -Destination (Join-Path $bundleRoot "INSTALL.md") -Force
-Copy-Item -Path "docs\RELEASE-NOTES-v1.0.0.md" -Destination (Join-Path $bundleRoot "RELEASE-NOTES-v1.0.0.md") -Force
+Assert-PathExists -Path $ReleaseNotesPath -Label "Release notes file"
+Copy-Item -Path $ReleaseNotesPath -Destination (Join-Path $bundleRoot ("RELEASE-NOTES-v{0}.md" -f $Version)) -Force
 
 $hashFile = Join-Path $bundleRoot "SHA256SUMS.txt"
 $artifacts = Get-ChildItem -Path $bundleRoot -File | Sort-Object Name
