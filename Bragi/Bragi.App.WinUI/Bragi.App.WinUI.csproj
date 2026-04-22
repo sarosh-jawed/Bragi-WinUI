@@ -11,6 +11,10 @@
     <WinUISDKReferences>false</WinUISDKReferences>
     <EnableMsixTooling>true</EnableMsixTooling>
     <Nullable>enable</Nullable>
+    <AssemblyName>Bragi</AssemblyName>
+    <Title>Bragi</Title>
+    <Product>Bragi</Product>
+    <ApplicationIcon>Assets\Bragi.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
     <None Remove="Pages\ExportFinishPage.xaml" />

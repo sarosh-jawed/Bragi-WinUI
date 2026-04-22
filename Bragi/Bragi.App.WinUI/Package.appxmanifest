@@ -15,7 +15,7 @@
   <mp:PhoneIdentity PhoneProductId="5f2b3b99-9b80-4305-8b82-bab9aeeeb5db" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
 
   <Properties>
-    <DisplayName>Bragi.App.WinUI</DisplayName>
+    <DisplayName>Bragi</DisplayName>
     <PublisherDisplayName>sjawed</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
   </Properties>

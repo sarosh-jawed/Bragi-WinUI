@@ -51,18 +51,18 @@ jobs:
         run: dotnet restore Bragi/Bragi.sln
 
       - name: Publish win-x64 folder build
-        run: dotnet publish Bragi/Bragi.App.WinUI/Bragi.App.WinUI.csproj -c Release -p:Platform=x64 -p:PublishProfile=win-x64.pubxml
+        run: dotnet publish Bragi/Bragi.App.WinUI/Bragi.App.WinUI.csproj -c Release -p:Platform=x64 -p:PublishProfile=win-x64.pubxml -p:PublishDir="${{ github.workspace }}\artifacts\publish\win-x64\"
 
       - name: Create zip artifact folder
         shell: pwsh
         run: |
-          $version = "${{ github.ref_name }}"
-          $publishRoot = "artifacts/publish/win-x64"
-          $releaseRoot = "artifacts/release"
-          $zipName = "Bragi-$version-win-x64.zip"
+            $version = "${{ github.ref_name }}"
+            $publishRoot = Join-Path $env:GITHUB_WORKSPACE "artifacts\publish\win-x64"
+            $releaseRoot = Join-Path $env:GITHUB_WORKSPACE "artifacts\release"
+            $zipName = "Bragi-$version-win-x64.zip"
 
-          New-Item -ItemType Directory -Force -Path $releaseRoot | Out-Null
-          Compress-Archive -Path "$publishRoot\*" -DestinationPath "$releaseRoot\$zipName" -Force
+            New-Item -ItemType Directory -Force -Path $releaseRoot | Out-Null
+            Compress-Archive -Path "$publishRoot\*" -DestinationPath "$releaseRoot\$zipName" -Force
 
       - name: Create SHA256SUMS
         shell: pwsh
